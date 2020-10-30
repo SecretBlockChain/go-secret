@@ -413,8 +413,8 @@ func (senate *Senate) FinalizeAndAssemble(chain consensus.ChainReader, header *t
 	// Accumulate any block rewards and commit the final state root
 	senate.accumulateRewards(config, state, header)
 
-	// Incr mint count for validator
-	if err = snap.IncrMint(extra.Epoch, header.Coinbase); err != nil {
+	// Save validator of block to snapshot
+	if err = snap.MintBlock(extra.Epoch, header.Number.Uint64(), header.Coinbase); err != nil {
 		return nil, err
 	}
 
