@@ -181,7 +181,7 @@ func TestUnDelegate(t *testing.T) {
 	assert.True(t, candidates[0].Weight.Cmp(big.NewInt(0)) == 0)
 }
 
-func TestIncrMintCount(t *testing.T) {
+func TestCountMinted(t *testing.T) {
 	db := rawdb.NewMemoryDatabase()
 	snap, err := newSnapshot(db)
 	assert.Nil(t, err)
@@ -195,17 +195,17 @@ func TestIncrMintCount(t *testing.T) {
 		SortableAddress{Address: validator3, Weight: big.NewInt(0)},
 	}))
 
-	assert.Nil(t, snap.IncrMint(1, validator1))
-	assert.Nil(t, snap.IncrMint(1, validator1))
-	assert.Nil(t, snap.IncrMint(1, validator1))
-	assert.Nil(t, snap.IncrMint(1, validator2))
-	assert.Nil(t, snap.IncrMint(1, validator2))
-	assert.Nil(t, snap.IncrMint(1, validator3))
-	assert.Nil(t, snap.IncrMint(1, validator3))
-	assert.Nil(t, snap.IncrMint(1, validator3))
-	assert.Nil(t, snap.IncrMint(1, validator3))
+	assert.Nil(t, snap.MintBlock(1, 1, validator1))
+	assert.Nil(t, snap.MintBlock(1, 2, validator1))
+	assert.Nil(t, snap.MintBlock(1, 3, validator1))
+	assert.Nil(t, snap.MintBlock(1, 4, validator2))
+	assert.Nil(t, snap.MintBlock(1, 5, validator2))
+	assert.Nil(t, snap.MintBlock(1, 6, validator3))
+	assert.Nil(t, snap.MintBlock(1, 7, validator3))
+	assert.Nil(t, snap.MintBlock(1, 8, validator3))
+	assert.Nil(t, snap.MintBlock(1, 9, validator3))
 
-	result, err := snap.CountMint(1)
+	result, err := snap.CountMinted(1)
 	assert.Nil(t, err)
 
 	assert.Equal(t, result[0].Address, validator2)

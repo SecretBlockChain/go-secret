@@ -238,7 +238,7 @@ func (senate *Senate) tryElect(config params.SenateConfig, state *state.StateDB,
 		}
 	} else {
 		minMint := big.NewInt(int64(config.Epoch / config.Period / config.MaxValidatorsCount / 2))
-		validators, err := snap.CountMint(headerExtra.Epoch - 1)
+		validators, err := snap.CountMinted(headerExtra.Epoch - 1)
 		if err != nil {
 			return err
 		}

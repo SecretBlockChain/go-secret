@@ -87,81 +87,69 @@ type Snapshot struct {
 // newSnapshot creates a new empty snapshot
 // only ever use if for the genesis block.
 func newSnapshot(diskdb ethdb.Database) (*Snapshot, error) {
-	db := trie.NewDatabase(diskdb)
-	epochTrie, err := newEpochTrie(common.Hash{}, db)
-	if err != nil {
-		return nil, err
-	}
-	delegateTrie, err := newDelegateTrie(common.Hash{}, db)
-	if err != nil {
-		return nil, err
-	}
-	voteTrie, err := newVoteTrie(common.Hash{}, db)
-	if err != nil {
-		return nil, err
-	}
-	candidateTrie, err := newCandidateTrie(common.Hash{}, db)
-	if err != nil {
-		return nil, err
-	}
-	mintCntTrie, err := newMintCntTrie(common.Hash{}, db)
-	if err != nil {
-		return nil, err
-	}
-	configTrie, err := newConfigTrie(common.Hash{}, db)
-	if err != nil {
-		return nil, err
+	snap := Snapshot{
+		db: trie.NewDatabase(diskdb),
 	}
 
-	snap := Snapshot{
-		db:            db,
-		epochTrie:     epochTrie,
-		delegateTrie:  delegateTrie,
-		voteTrie:      voteTrie,
-		candidateTrie: candidateTrie,
-		mintCntTrie:   mintCntTrie,
-		configTrie:    configTrie,
+	var err error
+	snap.epochTrie, err = newEpochTrie(common.Hash{}, snap.db)
+	if err != nil {
+		return nil, err
+	}
+	snap.delegateTrie, err = newDelegateTrie(common.Hash{}, snap.db)
+	if err != nil {
+		return nil, err
+	}
+	snap.voteTrie, err = newVoteTrie(common.Hash{}, snap.db)
+	if err != nil {
+		return nil, err
+	}
+	snap.candidateTrie, err = newCandidateTrie(common.Hash{}, snap.db)
+	if err != nil {
+		return nil, err
+	}
+	snap.mintCntTrie, err = newMintCntTrie(common.Hash{}, snap.db)
+	if err != nil {
+		return nil, err
+	}
+	snap.configTrie, err = newConfigTrie(common.Hash{}, snap.db)
+	if err != nil {
+		return nil, err
 	}
 	return &snap, nil
 }
 
 // loadSnapshot loads an existing snapshot from the database.
 func loadSnapshot(diskdb ethdb.Database, root Root) (*Snapshot, error) {
-	db := trie.NewDatabase(diskdb)
-	epochTrie, err := newEpochTrie(root.EpochHash, db)
-	if err != nil {
-		return nil, err
-	}
-	delegateTrie, err := newDelegateTrie(root.DelegateHash, db)
-	if err != nil {
-		return nil, err
-	}
-	voteTrie, err := newVoteTrie(root.VoteHash, db)
-	if err != nil {
-		return nil, err
-	}
-	candidateTrie, err := newCandidateTrie(root.CandidateHash, db)
-	if err != nil {
-		return nil, err
-	}
-	mintCntTrie, err := newMintCntTrie(root.MintCntHash, db)
-	if err != nil {
-		return nil, err
-	}
-	configTrie, err := newConfigTrie(root.ConfigHash, db)
-	if err != nil {
-		return nil, err
+	snap := Snapshot{
+		root: root,
+		db:   trie.NewDatabase(diskdb),
 	}
 
-	snap := Snapshot{
-		db:            db,
-		root:          root,
-		epochTrie:     epochTrie,
-		delegateTrie:  delegateTrie,
-		voteTrie:      voteTrie,
-		candidateTrie: candidateTrie,
-		mintCntTrie:   mintCntTrie,
-		configTrie:    configTrie,
+	var err error
+	snap.epochTrie, err = newEpochTrie(root.EpochHash, snap.db)
+	if err != nil {
+		return nil, err
+	}
+	snap.delegateTrie, err = newDelegateTrie(root.DelegateHash, snap.db)
+	if err != nil {
+		return nil, err
+	}
+	snap.voteTrie, err = newVoteTrie(root.VoteHash, snap.db)
+	if err != nil {
+		return nil, err
+	}
+	snap.candidateTrie, err = newCandidateTrie(root.CandidateHash, snap.db)
+	if err != nil {
+		return nil, err
+	}
+	snap.mintCntTrie, err = newMintCntTrie(root.MintCntHash, snap.db)
+	if err != nil {
+		return nil, err
+	}
+	snap.configTrie, err = newConfigTrie(root.ConfigHash, snap.db)
+	if err != nil {
+		return nil, err
 	}
 	return &snap, nil
 }
@@ -195,7 +183,7 @@ func (snap *Snapshot) apply(header *types.Header, headerExtra HeaderExtra) error
 			return err
 		}
 	}
-	if err := snap.IncrMint(headerExtra.Epoch, header.Coinbase); err != nil {
+	if err := snap.MintBlock(headerExtra.Epoch, header.Number.Uint64(), header.Coinbase); err != nil {
 		return err
 	}
 	return nil
@@ -266,7 +254,7 @@ func (snap *Snapshot) Commit(root Root) error {
 	return nil
 }
 
-// GetChainConfig get chain config from block snapshot.
+// GetChainConfig get chain config from snapshot.
 func (snap *Snapshot) GetChainConfig() (params.SenateConfig, error) {
 	key := []byte("config")
 	var config params.SenateConfig
@@ -277,7 +265,7 @@ func (snap *Snapshot) GetChainConfig() (params.SenateConfig, error) {
 	return config, nil
 }
 
-// SetChainConfig write chain config to block snapshot.
+// SetChainConfig write chain config to snapshot.
 func (snap *Snapshot) SetChainConfig(config params.SenateConfig) error {
 	if len(config.Rewards) == 0 {
 		config.Rewards = nil
@@ -294,7 +282,7 @@ func (snap *Snapshot) SetChainConfig(config params.SenateConfig) error {
 	return snap.configTrie.TryUpdate(key, data)
 }
 
-// GetValidators get validators from block snapshot.
+// GetValidators get validators of current epoch from snapshot.
 func (snap *Snapshot) GetValidators() (SortableAddresses, error) {
 	key := []byte("validator")
 	var validators SortableAddresses
@@ -305,7 +293,7 @@ func (snap *Snapshot) GetValidators() (SortableAddresses, error) {
 	return validators, nil
 }
 
-// SetValidators write validators to block snapshot.
+// SetValidators write validators of current epoch to snapshot.
 func (snap *Snapshot) SetValidators(validators SortableAddresses) error {
 	key := []byte("validator")
 	validatorsRLP, err := rlp.EncodeToBytes(validators)
@@ -316,49 +304,43 @@ func (snap *Snapshot) SetValidators(validators SortableAddresses) error {
 	return snap.epochTrie.TryUpdate(key, validatorsRLP)
 }
 
-// CountMint count the mint of validators at specified epoch.
-func (snap *Snapshot) CountMint(epoch uint64) (SortableAddresses, error) {
+// CountMinted count the minted of each validator.
+func (snap *Snapshot) CountMinted(epoch uint64) (SortableAddresses, error) {
 	validators, err := snap.GetValidators()
 	if err != nil {
 		return nil, err
 	}
 
-	result := make(SortableAddresses, 0, len(validators))
-	for _, validator := range validators {
-		key := make([]byte, 8)
-		binary.BigEndian.PutUint64(key, epoch)
-		key = append(key, validator.Address.Bytes()...)
+	prefix := make([]byte, 8)
+	binary.BigEndian.PutUint64(prefix, epoch)
+	iter := trie.NewIterator(snap.mintCntTrie.PrefixIterator(prefix))
 
-		count := uint64(0)
-		value, err := snap.mintCntTrie.TryGet(key)
-		if err == nil && value != nil {
-			count = binary.BigEndian.Uint64(value)
-		}
-		result = append(result, SortableAddress{
-			Address: validator.Address,
-			Weight:  big.NewInt(int64(count)),
-		})
+	mapper := make(map[common.Address]int64)
+	for iter.Next() {
+		validator := common.BytesToAddress(iter.Value)
+		count, _ := mapper[validator]
+		mapper[validator] = count + 1
 	}
 
-	sort.Sort(sort.Reverse(result))
-	return result, nil
+	for idx := range validators {
+		validator := &validators[idx]
+		count, ok := mapper[validator.Address]
+		if !ok {
+			validator.Weight = big.NewInt(0)
+		} else {
+			validator.Weight = big.NewInt(count)
+		}
+	}
+	sort.Sort(sort.Reverse(validators))
+	return validators, nil
 }
 
-// IncrMint increment counts in mintCntTrie for the miner of newBlock.
-func (snap *Snapshot) IncrMint(epoch uint64, validator common.Address) error {
-	count := uint64(1)
-	currentEpochBytes := make([]byte, 8)
-	binary.BigEndian.PutUint64(currentEpochBytes, epoch)
-
-	key := append(currentEpochBytes, validator.Bytes()...)
-	data, err := snap.mintCntTrie.TryGet(key)
-	if err == nil && data != nil {
-		count = binary.BigEndian.Uint64(data) + count
-	}
-
-	newCntBytes := make([]byte, 8)
-	binary.BigEndian.PutUint64(newCntBytes, count)
-	return snap.mintCntTrie.TryUpdate(key, newCntBytes)
+// ForgeBlock write validator of block to snapshot.
+func (snap *Snapshot) MintBlock(epoch, number uint64, validator common.Address) error {
+	key := make([]byte, 16)
+	binary.BigEndian.PutUint64(key[:8], epoch)
+	binary.BigEndian.PutUint64(key[8:], number)
+	return snap.mintCntTrie.TryUpdate(key, validator.Bytes())
 }
 
 // CountVotes count the votes of candidate.
