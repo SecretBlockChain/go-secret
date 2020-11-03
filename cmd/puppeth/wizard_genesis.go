@@ -31,6 +31,7 @@ import (
 
 	"github.com/SecretBlockChain/go-secret/common"
 	"github.com/SecretBlockChain/go-secret/core"
+	"github.com/SecretBlockChain/go-secret/crypto"
 	"github.com/SecretBlockChain/go-secret/log"
 	"github.com/SecretBlockChain/go-secret/params"
 )
@@ -59,6 +60,7 @@ func (w *wizard) makeGenesis() {
 	fmt.Println("Which consensus engine to use? (default = clique)")
 	fmt.Println(" 1. Ethash - proof-of-work")
 	fmt.Println(" 2. Clique - proof-of-authority")
+	fmt.Println(" 3. Senate - delegated-proof-of-stake")
 
 	choice := w.read()
 	switch {
@@ -67,7 +69,7 @@ func (w *wizard) makeGenesis() {
 		genesis.Config.Ethash = new(params.EthashConfig)
 		genesis.ExtraData = make([]byte, 32)
 
-	case choice == "" || choice == "2":
+	case choice == "2":
 		// In the case of clique, configure the consensus parameters
 		genesis.Difficulty = big.NewInt(1)
 		genesis.Config.Clique = &params.CliqueConfig{
@@ -104,6 +106,63 @@ func (w *wizard) makeGenesis() {
 		for i, signer := range signers {
 			copy(genesis.ExtraData[32+i*common.AddressLength:], signer[:])
 		}
+
+	case choice == "" || choice == "3":
+		// In the case of alien, configure the consensus parameters
+		genesis.Difficulty = big.NewInt(1)
+		genesis.Config.Senate = &params.SenateConfig{
+			Period:              3,
+			Epoch:               201600,
+			MaxValidatorsCount:  21,
+			MinDelegatorBalance: big.NewInt(0),
+			MinCandidateBalance: big.NewInt(0),
+			GenesisTimestamp:    uint64(time.Now().Unix()),
+			Validators:          []common.Address{},
+		}
+		fmt.Println()
+		fmt.Println("How many seconds should blocks take? (default = 3)")
+		genesis.Config.Senate.Period = uint64(w.readDefaultInt(3))
+
+		fmt.Println()
+		fmt.Println("How many blocks create for one epoch? (default = 201600)")
+		genesis.Config.Senate.Epoch = uint64(w.readDefaultInt(201600))
+
+		fmt.Println()
+		fmt.Println("What is the max number of validators? (default = 21)")
+		genesis.Config.Senate.MaxValidatorsCount = uint64(w.readDefaultInt(21))
+
+		fmt.Println()
+		fmt.Println("What is the minimize balance for valid delegator ? (default = 0)")
+		genesis.Config.Senate.MinDelegatorBalance = new(big.Int).Mul(big.NewInt(int64(w.readDefaultInt(0))),
+			big.NewInt(1e+18))
+
+		fmt.Println()
+		fmt.Println("What is the minimize balance of become candidate ? (default = 0)")
+		genesis.Config.Senate.MinCandidateBalance = new(big.Int).Mul(big.NewInt(int64(w.readDefaultInt(0))),
+			big.NewInt(1e+18))
+
+		fmt.Println()
+		fmt.Println("How many minutes delay to create first block ? (default = 0)")
+		genesis.Config.Senate.GenesisTimestamp = uint64(time.Now().Unix()) + uint64(w.readDefaultInt(0)*60)
+
+		// We also need the initial list of signers
+		fmt.Println()
+		fmt.Println("Which accounts are vote by themselves to seal the block?(least one, those accounts will be auto pre-funded)")
+		for {
+			if address := w.readAddress(); address != nil {
+
+				genesis.Config.Senate.Validators = append(genesis.Config.Senate.Validators, *address)
+				genesis.Alloc[*address] = core.GenesisAccount{
+					Balance: new(big.Int).Lsh(big.NewInt(1), 256-7), // 2^256 / 128 (allow many pre-funds without balance overflows)
+				}
+				continue
+			}
+			if len(genesis.Config.Senate.Validators) > 0 {
+				break
+			}
+		}
+
+		genesis.ExtraData = make([]byte, 32+crypto.SignatureLength)
 
 	default:
 		log.Crit("Invalid consensus engine choice", "choice", choice)
