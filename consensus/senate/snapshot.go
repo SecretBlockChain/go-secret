@@ -221,32 +221,32 @@ func (snap *Snapshot) Root() (root Root, err error) {
 // Commit commit snapshot changes to database.
 func (snap *Snapshot) Commit(root Root) error {
 	if snap.root.EpochHash != root.EpochHash {
-		if err := snap.db.Commit(root.EpochHash, false); err != nil {
+		if err := snap.db.Commit(root.EpochHash, false, nil); err != nil {
 			return err
 		}
 	}
 	if snap.root.DelegateHash != root.DelegateHash {
-		if err := snap.db.Commit(root.DelegateHash, false); err != nil {
+		if err := snap.db.Commit(root.DelegateHash, false, nil); err != nil {
 			return err
 		}
 	}
 	if snap.root.VoteHash != root.VoteHash {
-		if err := snap.db.Commit(root.VoteHash, false); err != nil {
+		if err := snap.db.Commit(root.VoteHash, false, nil); err != nil {
 			return err
 		}
 	}
 	if snap.root.CandidateHash != root.CandidateHash {
-		if err := snap.db.Commit(root.CandidateHash, false); err != nil {
+		if err := snap.db.Commit(root.CandidateHash, false, nil); err != nil {
 			return err
 		}
 	}
 	if snap.root.MintCntHash != root.MintCntHash {
-		if err := snap.db.Commit(root.MintCntHash, false); err != nil {
+		if err := snap.db.Commit(root.MintCntHash, false, nil); err != nil {
 			return err
 		}
 	}
 	if snap.root.ConfigHash != root.ConfigHash {
-		if err := snap.db.Commit(root.ConfigHash, false); err != nil {
+		if err := snap.db.Commit(root.ConfigHash, false, nil); err != nil {
 			return err
 		}
 	}

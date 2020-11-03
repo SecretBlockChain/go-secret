@@ -11,7 +11,7 @@ import (
 	"github.com/SecretBlockChain/go-secret/rlp"
 )
 
-// Root is the delegated-proof-of-stake trie root.
+// Root is the state tree root.
 type Root struct {
 	EpochHash     common.Hash
 	DelegateHash  common.Hash
@@ -39,6 +39,35 @@ type HeaderExtra struct {
 	CurrentBlockCandidates        []common.Address
 	CurrentBlockKickOutCandidates []common.Address
 	CurrentEpochValidators        SortableAddresses
+}
+
+// NewHeaderExtra new HeaderExtra from rlp bytes.
+func NewHeaderExtra(data []byte) (HeaderExtra, error) {
+	r, err := gzip.NewReader(bytes.NewReader(data))
+	if err != nil {
+		return HeaderExtra{}, err
+	}
+
+	buffer := bytes.NewBuffer(nil)
+	for {
+		var temp [128]byte
+		n, err := r.Read(temp[:])
+		if n > 0 {
+			buffer.Write(temp[:n])
+		}
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return HeaderExtra{}, err
+		}
+	}
+
+	var extra HeaderExtra
+	if err := rlp.DecodeBytes(buffer.Bytes(), &extra); err != nil {
+		return HeaderExtra{}, err
+	}
+	return extra, nil
 }
 
 // Encode encode header extra as rlp bytes.
@@ -117,35 +146,6 @@ func (extra HeaderExtra) Equal(other HeaderExtra) bool {
 	return true
 }
 
-// NewHeaderExtra new HeaderExtra from rlp bytes.
-func NewHeaderExtra(data []byte) (HeaderExtra, error) {
-	r, err := gzip.NewReader(bytes.NewReader(data))
-	if err != nil {
-		return HeaderExtra{}, err
-	}
-
-	buffer := bytes.NewBuffer(nil)
-	for {
-		var temp [128]byte
-		n, err := r.Read(temp[:])
-		if n > 0 {
-			buffer.Write(temp[:n])
-		}
-		if err != nil {
-			if err == io.EOF {
-				break
-			}
-			return HeaderExtra{}, err
-		}
-	}
-
-	var extra HeaderExtra
-	if err := rlp.DecodeBytes(buffer.Bytes(), &extra); err != nil {
-		return HeaderExtra{}, err
-	}
-	return extra, nil
-}
-
 func decodeHeaderExtra(header *types.Header) (HeaderExtra, error) {
 	extra := header.Extra
 	if len(extra) < extraVanity {
@@ -159,4 +159,38 @@ func decodeHeaderExtra(header *types.Header) (HeaderExtra, error) {
 		return HeaderExtra{}, err
 	}
 	return headerExtra, nil
+}
+
+// Ensure each element of an Delegate slice are not the same.
+func delegatesDistinct(slice []Delegate) []Delegate {
+	if len(slice) <= 1 {
+		return slice
+	}
+
+	set := make(map[Delegate]struct{})
+	result := make([]Delegate, 0, len(slice))
+	for _, address := range slice {
+		if _, ok := set[address]; !ok {
+			set[address] = struct{}{}
+			result = append(result, address)
+		}
+	}
+	return result
+}
+
+// Ensure each element of an common.Address slice are not the same.
+func addressesDistinct(slice []common.Address) []common.Address {
+	if len(slice) <= 1 {
+		return slice
+	}
+
+	set := make(map[common.Address]struct{})
+	result := make([]common.Address, 0, len(slice))
+	for _, address := range slice {
+		if _, ok := set[address]; !ok {
+			set[address] = struct{}{}
+			result = append(result, address)
+		}
+	}
+	return result
 }

@@ -16,6 +16,7 @@ import (
 	"github.com/SecretBlockChain/go-secret/log"
 	"github.com/SecretBlockChain/go-secret/params"
 	"github.com/SecretBlockChain/go-secret/rlp"
+	"github.com/SecretBlockChain/go-secret/trie"
 	lru "github.com/hashicorp/golang-lru"
 	"golang.org/x/crypto/sha3"
 )
@@ -55,7 +56,7 @@ func (senate *Senate) Author(header *types.Header) (common.Address, error) {
 // VerifyHeader checks whether a header conforms to the consensus rules of a
 // given engine. Verifying the seal may be done optionally here, or explicitly
 // via the VerifySeal method.
-func (senate *Senate) VerifyHeader(chain consensus.ChainReader, header *types.Header, seal bool) error {
+func (senate *Senate) VerifyHeader(chain consensus.ChainHeaderReader, header *types.Header, seal bool) error {
 	return senate.verifyHeader(chain, header, nil)
 }
 
@@ -63,7 +64,7 @@ func (senate *Senate) VerifyHeader(chain consensus.ChainReader, header *types.He
 // concurrently. The method returns a quit channel to abort the operations and
 // a results channel to retrieve the async verifications (the order is that of
 // the input slice).
-func (senate *Senate) VerifyHeaders(chain consensus.ChainReader, headers []*types.Header, seals []bool) (chan<- struct{}, <-chan error) {
+func (senate *Senate) VerifyHeaders(chain consensus.ChainHeaderReader, headers []*types.Header, seals []bool) (chan<- struct{}, <-chan error) {
 	abort := make(chan struct{})
 	results := make(chan error, len(headers))
 	numbers := make([]int64, 0)
@@ -88,11 +89,11 @@ func (senate *Senate) VerifyHeaders(chain consensus.ChainReader, headers []*type
 // caller may optionally pass in a batch of parents (ascending order) to avoid
 // looking those up from the database. This is useful for concurrently verifying
 // a batch of new headers.
-func (senate *Senate) verifyHeader(chain consensus.ChainReader, header *types.Header, parents []*types.Header) error {
+func (senate *Senate) verifyHeader(chain consensus.ChainHeaderReader, header *types.Header, parents []*types.Header) error {
 	if header.Number == nil {
 		return errUnknownBlock
 	}
-	log.Info("[DPOS] VerifyHeader", "number", header.Number.Int64())
+	log.Trace("[DPOS] VerifyHeader", "number", header.Number.Int64())
 
 	// Don't waste time checking blocks from the future
 	if header.Time > uint64(time.Now().Unix()) {
@@ -129,7 +130,7 @@ func (senate *Senate) verifyHeader(chain consensus.ChainReader, header *types.He
 // rather depend on a batch of previous headers. The caller may optionally pass
 // in a batch of parents (ascending order) to avoid looking those up from the
 // database. This is useful for concurrently verifying a batch of new headers.
-func (senate *Senate) verifyCascadingFields(chain consensus.ChainReader, header *types.Header, parents []*types.Header) error {
+func (senate *Senate) verifyCascadingFields(chain consensus.ChainHeaderReader, header *types.Header, parents []*types.Header) error {
 	// The genesis block is the always valid dead-end
 	number := header.Number.Uint64()
 	if number == 0 {
@@ -157,13 +158,15 @@ func (senate *Senate) verifyCascadingFields(chain consensus.ChainReader, header 
 	if err != nil {
 		return err
 	}
+
+	parentHeaderExtra := headerExtra
 	if parent.Number.Int64() == 0 {
 		snap, err = newSnapshot(senate.db)
 		if err != nil {
 			return err
 		}
 	} else {
-		parentHeaderExtra, err := decodeHeaderExtra(parent)
+		parentHeaderExtra, err = decodeHeaderExtra(parent)
 		if err != nil {
 			return err
 		}
@@ -176,6 +179,13 @@ func (senate *Senate) verifyCascadingFields(chain consensus.ChainReader, header 
 		snap, err = loadSnapshot(senate.db, parentHeaderExtra.Root)
 		if err != nil {
 			return err
+		}
+	}
+
+	// Ensure that the epoch timestamp and parent block are continuous
+	if headerExtra.Epoch != parentHeaderExtra.Epoch || headerExtra.EpochTime != parentHeaderExtra.EpochTime {
+		if headerExtra.Epoch != parentHeaderExtra.Epoch+1 || headerExtra.EpochTime != header.Time {
+			return ErrInvalidTimestamp
 		}
 	}
 
@@ -217,8 +227,8 @@ func (senate *Senate) VerifyUncles(chain consensus.ChainReader, block *types.Blo
 
 // VerifySeal checks whether the crypto seal on a header is valid according to
 // the consensus rules of the given engine.
-func (senate *Senate) VerifySeal(chain consensus.ChainReader, header *types.Header) error {
-	log.Info("[DPOS] VerifySeal", "number", header.Number.Int64())
+func (senate *Senate) VerifySeal(chain consensus.ChainHeaderReader, header *types.Header) error {
+	log.Trace("[DPOS] VerifySeal", "number", header.Number.Int64())
 
 	config := *senate.config
 	parent := chain.GetHeader(header.ParentHash, header.Number.Uint64()-1)
@@ -256,8 +266,8 @@ func (senate *Senate) verifySeal(config params.SenateConfig, header, parent *typ
 
 // Prepare initializes the consensus fields of a block header according to the
 // rules of a particular engine. The changes are executed inline.
-func (senate *Senate) Prepare(chain consensus.ChainReader, header *types.Header) error {
-	log.Info("[DPOS] Prepare", "number", header.Number.Int64())
+func (senate *Senate) Prepare(chain consensus.ChainHeaderReader, header *types.Header) error {
+	log.Trace("[DPOS] Prepare", "number", header.Number.Int64())
 
 	// Mix digest is reserved for now, set to empty
 	header.MixDigest = common.Hash{}
@@ -330,10 +340,10 @@ func (senate *Senate) Prepare(chain consensus.ChainReader, header *types.Header)
 //
 // Note: The block header and state database might be updated to reflect any
 // consensus rules that happen at finalization (e.g. block rewards).
-func (senate *Senate) Finalize(chain consensus.ChainReader, header *types.Header, state *state.StateDB, txs []*types.Transaction,
+func (senate *Senate) Finalize(chain consensus.ChainHeaderReader, header *types.Header, state *state.StateDB, txs []*types.Transaction,
 	uncles []*types.Header) {
 
-	log.Info("[DPOS] Finalize", "number", header.Number.Int64())
+	log.Trace("[DPOS] Finalize", "number", header.Number.Int64())
 
 	// Load snapshot of parent block
 	var snap *Snapshot
@@ -387,16 +397,20 @@ func (senate *Senate) Finalize(chain consensus.ChainReader, header *types.Header
 //
 // Note: The block header and state database might be updated to reflect any
 // consensus rules that happen at finalization (e.g. block rewards).
-func (senate *Senate) FinalizeAndAssemble(chain consensus.ChainReader, header *types.Header, state *state.StateDB, txs []*types.Transaction,
+func (senate *Senate) FinalizeAndAssemble(chain consensus.ChainHeaderReader, header *types.Header, state *state.StateDB, txs []*types.Transaction,
 	uncles []*types.Header, receipts []*types.Receipt) (*types.Block, error) {
 
-	log.Info("[DPOS] FinalizeAndAssemble", "number", header.Number.Int64())
+	log.Trace("[DPOS] FinalizeAndAssemble", "number", header.Number.Int64())
 
 	// Load snapshot of last block
 	extra, err := decodeHeaderExtra(header)
 	if err != nil {
 		return nil, err
 	}
+	extra.CurrentBlockDelegates = nil
+	extra.CurrentBlockCandidates = nil
+	extra.CurrentEpochValidators = nil
+	extra.CurrentBlockKickOutCandidates = nil
 
 	snap, err := loadSnapshot(senate.db, extra.Root)
 	if err != nil {
@@ -423,7 +437,7 @@ func (senate *Senate) FinalizeAndAssemble(chain consensus.ChainReader, header *t
 
 	// Elect validators in first block for epoch
 	if err = senate.tryElect(config, state, header, snap, &extra); err != nil {
-		log.Info("[DPOS] Fail to try elect", "reason", err)
+		log.Warn("[DPOS] Failed to try elect", "reason", err)
 		return nil, err
 	}
 
@@ -447,7 +461,7 @@ func (senate *Senate) FinalizeAndAssemble(chain consensus.ChainReader, header *t
 
 	header.Root = state.IntermediateRoot(chain.Config().IsEIP158(header.Number))
 	header.UncleHash = types.CalcUncleHash(nil)
-	return types.NewBlock(header, txs, nil, receipts), nil
+	return types.NewBlock(header, txs, nil, receipts, new(trie.Trie)), nil
 }
 
 // Seal generates a new sealing request for the given input block and pushes
@@ -455,8 +469,8 @@ func (senate *Senate) FinalizeAndAssemble(chain consensus.ChainReader, header *t
 //
 // Note, the method returns immediately and will send the result async. More
 // than one result may also be returned depending on the consensus algorithm.
-func (senate *Senate) Seal(chain consensus.ChainReader, block *types.Block, results chan<- *types.Block, stop <-chan struct{}) error {
-	log.Info("[DPOS] Seal", "number", block.Number().Int64())
+func (senate *Senate) Seal(chain consensus.ChainHeaderReader, block *types.Block, results chan<- *types.Block, stop <-chan struct{}) error {
+	log.Trace("[DPOS] Seal", "number", block.Number().Int64())
 
 	// Sealing the genesis block is not supported
 	header := block.Header()
@@ -524,7 +538,7 @@ func (senate *Senate) SealHash(header *types.Header) (hash common.Hash) {
 
 // CalcDifficulty is the difficulty adjustment algorithm. It returns the difficulty
 // that a new block should have.
-func (senate *Senate) CalcDifficulty(chain consensus.ChainReader, time uint64, parent *types.Header) *big.Int {
+func (senate *Senate) CalcDifficulty(chain consensus.ChainHeaderReader, time uint64, parent *types.Header) *big.Int {
 	return big.NewInt(defaultDifficulty)
 }
 

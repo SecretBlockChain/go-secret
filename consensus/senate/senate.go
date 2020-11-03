@@ -95,7 +95,7 @@ func (senate *Senate) Close() error {
 }
 
 // APIs returns the RPC APIs this consensus engine provides.
-func (senate *Senate) APIs(chain consensus.ChainReader) []rpc.API {
+func (senate *Senate) APIs(chain consensus.ChainHeaderReader) []rpc.API {
 	return []rpc.API{{
 		Namespace: "dpos",
 		Version:   "1.0",
@@ -236,6 +236,9 @@ func (senate *Senate) tryElect(config params.SenateConfig, state *state.StateDB,
 			})
 			headerExtra.CurrentBlockCandidates = append(headerExtra.CurrentBlockCandidates, validator)
 		}
+
+		headerExtra.CurrentBlockDelegates = delegatesDistinct(headerExtra.CurrentBlockDelegates)
+		headerExtra.CurrentBlockCandidates = addressesDistinct(headerExtra.CurrentBlockCandidates)
 	} else {
 		minMint := big.NewInt(int64(config.Epoch / config.Period / config.MaxValidatorsCount / 2))
 		validators, err := snap.CountMinted(headerExtra.Epoch - 1)
@@ -355,6 +358,9 @@ func (senate *Senate) processTransactions(config params.SenateConfig, state *sta
 			}
 		}
 	}
+
+	headerExtra.CurrentBlockDelegates = delegatesDistinct(headerExtra.CurrentBlockDelegates)
+	headerExtra.CurrentBlockCandidates = addressesDistinct(headerExtra.CurrentBlockCandidates)
 
 	log.Info("[DPOS] Process transactions done", "count", count)
 }
