@@ -20,6 +20,8 @@ import (
 	"encoding/binary"
 	"fmt"
 	"math/big"
+	"sort"
+	"time"
 
 	"github.com/SecretBlockChain/go-secret/common"
 	"github.com/SecretBlockChain/go-secret/crypto"
@@ -239,16 +241,16 @@ var (
 	//
 	// This configuration is intentionally not using keyed fields to force anyone
 	// adding flags to the config to also have to set these fields.
-	AllEthashProtocolChanges = &ChainConfig{big.NewInt(1337), big.NewInt(0), nil, false, big.NewInt(0), common.Hash{}, big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), nil, nil, nil, new(EthashConfig), nil}
+	AllEthashProtocolChanges = &ChainConfig{big.NewInt(1337), big.NewInt(0), nil, false, big.NewInt(0), common.Hash{}, big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), nil, nil, nil, new(EthashConfig), nil, nil}
 
 	// AllCliqueProtocolChanges contains every protocol change (EIPs) introduced
 	// and accepted by the Ethereum core developers into the Clique consensus.
 	//
 	// This configuration is intentionally not using keyed fields to force anyone
 	// adding flags to the config to also have to set these fields.
-	AllCliqueProtocolChanges = &ChainConfig{big.NewInt(1337), big.NewInt(0), nil, false, big.NewInt(0), common.Hash{}, big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), nil, nil, nil, nil, &CliqueConfig{Period: 0, Epoch: 30000}}
+	AllCliqueProtocolChanges = &ChainConfig{big.NewInt(1337), big.NewInt(0), nil, false, big.NewInt(0), common.Hash{}, big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), nil, nil, nil, nil, &CliqueConfig{Period: 0, Epoch: 30000}, nil}
 
-	TestChainConfig = &ChainConfig{big.NewInt(1), big.NewInt(0), nil, false, big.NewInt(0), common.Hash{}, big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), nil, nil, nil, new(EthashConfig), nil}
+	TestChainConfig = &ChainConfig{big.NewInt(1), big.NewInt(0), nil, false, big.NewInt(0), common.Hash{}, big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), nil, nil, nil, new(EthashConfig), nil, nil}
 	TestRules       = TestChainConfig.Rules(new(big.Int))
 )
 
@@ -326,6 +328,7 @@ type ChainConfig struct {
 	// Various consensus engines
 	Ethash *EthashConfig `json:"ethash,omitempty"`
 	Clique *CliqueConfig `json:"clique,omitempty"`
+	Senate *SenateConfig `json:"senate,omitempty"`
 }
 
 // EthashConfig is the consensus engine configs for proof-of-work based sealing.
@@ -345,6 +348,97 @@ type CliqueConfig struct {
 // String implements the stringer interface, returning the consensus engine details.
 func (c *CliqueConfig) String() string {
 	return "clique"
+}
+
+// SenateReward is reward rule of mint block.
+type SenateReward struct {
+	Height uint64   `json:"height"` // Block height
+	Reward *big.Int `json:"reward"` // Reward of mint block
+}
+
+type SenateRewards []SenateReward
+
+func (p SenateRewards) Len() int           { return len(p) }
+func (p SenateRewards) Less(i, j int) bool { return p[i].Height < p[j].Height }
+func (p SenateRewards) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
+
+// Sort is a convenience method.
+func (p SenateRewards) Sort() { sort.Sort(p) }
+
+// SenateConfig is the consensus engine configs for delegated-proof-of-stake based sealing.
+type SenateConfig struct {
+	Period              uint64           `json:"period"`              // Number of seconds between blocks to enforce
+	Epoch               uint64           `json:"epoch"`               // Epoch length to reset votes and checkpoint
+	MaxValidatorsCount  uint64           `json:"maxValidatorsCount"`  // Max count of validators
+	MinDelegatorBalance *big.Int         `json:"minDelegatorBalance"` // Min delegator balance to valid this delegate
+	MinCandidateBalance *big.Int         `json:"minCandidateBalance"` // Min candidate balance to valid this candidate
+	GenesisTimestamp    uint64           `json:"genesisTimestamp"`    // The timestamp of first Block
+	Validators          []common.Address `json:"validators"`          // Genesis validator list
+	Rewards             SenateRewards    `json:"rewards"`             // Reward rule of mint block
+}
+
+// DefaultSenateConfig returns default config of senate consensus engine.
+func DefaultSenateConfig() SenateConfig {
+	return SenateConfig{
+		Period:              8,
+		Epoch:               86400,
+		MaxValidatorsCount:  21,
+		MinDelegatorBalance: big.NewInt(1),
+		MinCandidateBalance: big.NewInt(100),
+		GenesisTimestamp:    uint64(time.Now().Add(time.Minute * 1).Unix()),
+		Rewards: SenateRewards{
+			{Height: 9999999999, Reward: big.NewInt(5)},
+		},
+	}
+}
+
+// String implements the stringer interface, returning the consensus engine details.
+func (c *SenateConfig) String() string {
+	return "senate"
+}
+
+// Equal compares two SenateConfigs for equality.
+func (c *SenateConfig) Equal(other SenateConfig) bool {
+	if c.Period != other.Period {
+		return false
+	}
+	if c.Epoch != other.Epoch {
+		return false
+	}
+	if c.MaxValidatorsCount != other.MaxValidatorsCount {
+		return false
+	}
+	if c.MinDelegatorBalance.Cmp(other.MinDelegatorBalance) != 0 {
+		return false
+	}
+	if c.MinCandidateBalance.Cmp(other.MinCandidateBalance) != 0 {
+		return false
+	}
+	if c.GenesisTimestamp != other.GenesisTimestamp {
+		return false
+	}
+
+	if len(c.Validators) != len(other.Validators) {
+		return false
+	}
+	for idx, validator := range c.Validators {
+		if validator != other.Validators[idx] {
+			return false
+		}
+	}
+
+	if len(c.Rewards) != len(other.Rewards) {
+		return false
+	}
+	for idx, reward := range c.Rewards {
+		if reward.Height != other.Rewards[idx].Height {
+			return false
+		}
+		if reward.Reward.Cmp(other.Rewards[idx].Reward) != 0 {
+			return false
+		}
+	}
+	return true
 }
 
 // String implements the fmt.Stringer interface.
