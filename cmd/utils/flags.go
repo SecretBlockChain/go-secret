@@ -38,6 +38,7 @@ import (
 	"github.com/SecretBlockChain/go-secret/consensus"
 	"github.com/SecretBlockChain/go-secret/consensus/clique"
 	"github.com/SecretBlockChain/go-secret/consensus/ethash"
+	"github.com/SecretBlockChain/go-secret/consensus/senate"
 	"github.com/SecretBlockChain/go-secret/core"
 	"github.com/SecretBlockChain/go-secret/core/rawdb"
 	"github.com/SecretBlockChain/go-secret/core/vm"
@@ -1810,6 +1811,8 @@ func MakeChain(ctx *cli.Context, stack *node.Node, readOnly bool) (chain *core.B
 	var engine consensus.Engine
 	if config.Clique != nil {
 		engine = clique.New(config.Clique, chainDb)
+	} else if config.Senate != nil {
+		engine = senate.New(config.Senate, chainDb)
 	} else {
 		engine = ethash.NewFaker()
 		if !ctx.GlobalBool(FakePoWFlag.Name) {

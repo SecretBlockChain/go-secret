@@ -24,10 +24,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	mapset "github.com/deckarep/golang-set"
 	"github.com/SecretBlockChain/go-secret/common"
 	"github.com/SecretBlockChain/go-secret/consensus"
 	"github.com/SecretBlockChain/go-secret/consensus/misc"
+	"github.com/SecretBlockChain/go-secret/consensus/senate"
 	"github.com/SecretBlockChain/go-secret/core"
 	"github.com/SecretBlockChain/go-secret/core/state"
 	"github.com/SecretBlockChain/go-secret/core/types"
@@ -35,6 +35,7 @@ import (
 	"github.com/SecretBlockChain/go-secret/log"
 	"github.com/SecretBlockChain/go-secret/params"
 	"github.com/SecretBlockChain/go-secret/trie"
+	mapset "github.com/deckarep/golang-set"
 )
 
 const (
@@ -428,6 +429,12 @@ func (w *worker) mainLoop() {
 	defer w.chainHeadSub.Unsubscribe()
 	defer w.chainSideSub.Unsubscribe()
 
+	// Set the delay equal to period if use senate consensus
+	senateDelay := 1 * time.Second
+	if w.chainConfig.Senate != nil && w.chainConfig.Senate.Period > 0 {
+		senateDelay = time.Duration(w.chainConfig.Senate.Period) * time.Second
+	}
+
 	for {
 		select {
 		case req := <-w.newWorkCh:
@@ -509,6 +516,12 @@ func (w *worker) mainLoop() {
 				}
 			}
 			atomic.AddInt32(&w.newTxs, int32(len(ev.Txs)))
+
+		case <-time.After(senateDelay):
+			// Try to seal block in each period, even no new block received in dpos
+			if w.chainConfig.Senate != nil && w.chainConfig.Senate.Period > 0 {
+				w.commitNewWork(nil, false, time.Now().Unix())
+			}
 
 		// System stopped
 		case <-w.exitCh:
@@ -903,6 +916,13 @@ func (w *worker) commitNewWork(interrupt *int32, noempty bool, timestamp int64) 
 		log.Error("Failed to create mining context", "err", err)
 		return
 	}
+
+	engine, ok := w.engine.(*senate.Senate)
+	if ok && !engine.InTurn(parent.Header(), uint64(tstart.Unix())) {
+		w.updateSnapshot()
+		return
+	}
+
 	// Create the current work task and check any fork transitions needed
 	env := w.current
 	if w.chainConfig.DAOForkSupport && w.chainConfig.DAOForkBlock != nil && w.chainConfig.DAOForkBlock.Cmp(header.Number) == 0 {
