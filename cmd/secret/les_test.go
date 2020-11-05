@@ -103,7 +103,7 @@ func startGethWithIpc(t *testing.T, name string, args ...string) *gethrpc {
 	// wait before we can attach to it. TODO: probe for it properly
 	time.Sleep(1 * time.Second)
 	var err error
-	ipcpath := filepath.Join(g.geth.Datadir, "geth.ipc")
+	ipcpath := filepath.Join(g.geth.Datadir, "secret.ipc")
 	g.rpc, err = rpc.Dial(ipcpath)
 	if err != nil {
 		t.Fatalf("%v rpc connect: %v", name, err)

@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with go-ethereum. If not, see <http://www.gnu.org/licenses/>.
 
-// geth is the official command-line client for Ethereum.
+// secret is the official command-line client for Secret.
 package main
 
 import (
@@ -46,7 +46,7 @@ import (
 )
 
 const (
-	clientIdentifier = "geth" // Client identifier to advertise over the network
+	clientIdentifier = "secret" // Client identifier to advertise over the network
 )
 
 var (
@@ -54,7 +54,7 @@ var (
 	gitCommit = ""
 	gitDate   = ""
 	// The app that holds all commands and flags.
-	app = flags.NewApp(gitCommit, gitDate, "the go-ethereum command line interface")
+	app = flags.NewApp(gitCommit, gitDate, "the go-secret command line interface")
 	// flags that configure the node
 	nodeFlags = []cli.Flag{
 		utils.IdentityFlag,
@@ -214,10 +214,10 @@ var (
 )
 
 func init() {
-	// Initialize the CLI app and start Geth
-	app.Action = geth
+	// Initialize the CLI app and start Secret
+	app.Action = secret
 	app.HideVersion = true // we have a command to print the version
-	app.Copyright = "Copyright 2013-2020 The go-ethereum Authors"
+	app.Copyright = "Copyright 2020-2021 The go-secret Authors"
 	app.Commands = []cli.Command{
 		// See chaincmd.go:
 		initCommand,
@@ -282,24 +282,24 @@ func prepare(ctx *cli.Context) {
 	// If we're running a known preset, log it for convenience.
 	switch {
 	case ctx.GlobalIsSet(utils.LegacyTestnetFlag.Name):
-		log.Info("Starting Geth on Ropsten testnet...")
+		log.Info("Starting Secret on Ropsten testnet...")
 		log.Warn("The --testnet flag is ambiguous! Please specify one of --goerli, --rinkeby, or --ropsten.")
 		log.Warn("The generic --testnet flag is deprecated and will be removed in the future!")
 
 	case ctx.GlobalIsSet(utils.RopstenFlag.Name):
-		log.Info("Starting Geth on Ropsten testnet...")
+		log.Info("Starting Secret on Ropsten testnet...")
 
 	case ctx.GlobalIsSet(utils.RinkebyFlag.Name):
-		log.Info("Starting Geth on Rinkeby testnet...")
+		log.Info("Starting Secret on Rinkeby testnet...")
 
 	case ctx.GlobalIsSet(utils.GoerliFlag.Name):
-		log.Info("Starting Geth on Görli testnet...")
+		log.Info("Starting Secret on Görli testnet...")
 
 	case ctx.GlobalIsSet(utils.DeveloperFlag.Name):
-		log.Info("Starting Geth in ephemeral dev mode...")
+		log.Info("Starting Secret in ephemeral dev mode...")
 
 	case !ctx.GlobalIsSet(utils.NetworkIdFlag.Name):
-		log.Info("Starting Geth on Ethereum mainnet...")
+		log.Info("Starting Secret on Secret mainnet...")
 	}
 	// If we're a full node on mainnet without --cache specified, bump default cache allowance
 	if ctx.GlobalString(utils.SyncModeFlag.Name) != "light" && !ctx.GlobalIsSet(utils.CacheFlag.Name) && !ctx.GlobalIsSet(utils.NetworkIdFlag.Name) {
@@ -342,10 +342,10 @@ func prepare(ctx *cli.Context) {
 	go metrics.CollectProcessMetrics(3 * time.Second)
 }
 
-// geth is the main entry point into the system if no special subcommand is ran.
+// secret is the main entry point into the system if no special subcommand is ran.
 // It creates a default node based on the command line arguments and runs it in
 // blocking mode, waiting for it to be shut down.
-func geth(ctx *cli.Context) error {
+func secret(ctx *cli.Context) error {
 	if args := ctx.Args(); len(args) > 0 {
 		return fmt.Errorf("invalid command: %q", args[0])
 	}
