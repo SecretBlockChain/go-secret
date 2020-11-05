@@ -286,7 +286,7 @@ func (pm *ProtocolManager) Stop() {
 	pm.peers.Close()
 	pm.peerWG.Wait()
 
-	log.Info("Ethereum protocol stopped")
+	log.Info("Secret protocol stopped")
 }
 
 func (pm *ProtocolManager) newPeer(pv int, p *p2p.Peer, rw p2p.MsgReadWriter, getPooledTx func(hash common.Hash) *types.Transaction) *peer {
@@ -309,7 +309,7 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	if pm.peers.Len() >= pm.maxPeers && !p.Peer.Info().Network.Trusted {
 		return p2p.DiscTooManyPeers
 	}
-	p.Log().Debug("Ethereum peer connected", "name", p.Name())
+	p.Log().Debug("Secret peer connected", "name", p.Name())
 
 	// Execute the Ethereum handshake
 	var (
@@ -321,13 +321,13 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	)
 	forkID := forkid.NewID(pm.blockchain.Config(), pm.blockchain.Genesis().Hash(), pm.blockchain.CurrentHeader().Number.Uint64())
 	if err := p.Handshake(pm.networkID, td, hash, genesis.Hash(), forkID, pm.forkFilter); err != nil {
-		p.Log().Debug("Ethereum handshake failed", "err", err)
+		p.Log().Debug("Secret handshake failed", "err", err)
 		return err
 	}
 
 	// Register the peer locally
 	if err := pm.peers.Register(p, pm.removePeer); err != nil {
-		p.Log().Error("Ethereum peer registration failed", "err", err)
+		p.Log().Error("Secret peer registration failed", "err", err)
 		return err
 	}
 	defer pm.removePeer(p.id)
@@ -370,7 +370,7 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	// Handle incoming messages until the connection is torn down
 	for {
 		if err := pm.handleMsg(p); err != nil {
-			p.Log().Debug("Ethereum message handling failed", "err", err)
+			p.Log().Debug("Secret message handling failed", "err", err)
 			return err
 		}
 	}
