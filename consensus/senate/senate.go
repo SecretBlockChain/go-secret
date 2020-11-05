@@ -362,5 +362,5 @@ func (senate *Senate) processTransactions(config params.SenateConfig, state *sta
 	headerExtra.CurrentBlockDelegates = delegatesDistinct(headerExtra.CurrentBlockDelegates)
 	headerExtra.CurrentBlockCandidates = addressesDistinct(headerExtra.CurrentBlockCandidates)
 
-	log.Info("[DPOS] Process transactions done", "count", count)
+	log.Trace("[DPOS] Processing transactions done", "txs", count)
 }
