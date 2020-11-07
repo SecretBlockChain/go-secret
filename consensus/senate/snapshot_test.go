@@ -76,7 +76,7 @@ func TestTopCandidates(t *testing.T) {
 	snap, err := newSnapshot(db)
 	assert.Nil(t, err)
 
-	statedb, err := state.New(common.Hash{}, state.NewDatabase(db))
+	statedb, err := state.New(common.Hash{}, state.NewDatabase(db), nil)
 	assert.Nil(t, err)
 
 	delegator1 := common.HexToAddress("0x44d1ce0b7cb3588bca96151fe1bc05af38f91b6c")
@@ -129,7 +129,7 @@ func TestKickOutCandidate(t *testing.T) {
 	snap, err := newSnapshot(db)
 	assert.Nil(t, err)
 
-	statedb, err := state.New(common.Hash{}, state.NewDatabase(db))
+	statedb, err := state.New(common.Hash{}, state.NewDatabase(db), nil)
 	assert.Nil(t, err)
 
 	candidate := common.HexToAddress("0xcc7c8317b21e1cea6139700c3c46c21af998d14c")
@@ -153,7 +153,7 @@ func TestUnDelegate(t *testing.T) {
 	snap, err := newSnapshot(db)
 	assert.Nil(t, err)
 
-	statedb, err := state.New(common.Hash{}, state.NewDatabase(db))
+	statedb, err := state.New(common.Hash{}, state.NewDatabase(db), nil)
 	assert.Nil(t, err)
 
 	candidate := common.HexToAddress("0xcc7c8317b21e1cea6139700c3c46c21af998d14c")

@@ -326,16 +326,16 @@ func (senate *Senate) processTransactions(config params.SenateConfig, state *sta
 
 	count := 0
 	for _, tx := range txs {
-		customTx, err := NewCustomTx(tx)
+		ctx, err := NewTransaction(tx)
 		if err != nil {
 			continue
 		}
 
-		switch customTx.Type() {
-		case EventTx:
-			switch customTx.(type) {
+		switch ctx.Type() {
+		case EventTransactionType:
+			switch ctx.(type) {
 			case *EventDelegate:
-				event := customTx.(*EventDelegate)
+				event := ctx.(*EventDelegate)
 				if state.GetBalance(event.Delegator).Cmp(config.MinDelegatorBalance) == -1 {
 					break
 				}
@@ -347,7 +347,7 @@ func (senate *Senate) processTransactions(config params.SenateConfig, state *sta
 				}
 				count++
 			case *EventBecomeCandidate:
-				event := customTx.(*EventBecomeCandidate)
+				event := ctx.(*EventBecomeCandidate)
 				if state.GetBalance(event.Candidate).Cmp(config.MinCandidateBalance) == -1 {
 					break
 				}
