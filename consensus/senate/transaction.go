@@ -147,10 +147,11 @@ func (event *EventBecomeCandidate) Decode(tx *types.Transaction, data []byte) er
 // data like "senate:1:event:proposal:minCandidateBalance:0x56bc75e2d63100000"
 // data like "senate:1:event:proposal:rewards:0x69e10de76676d0800000:0x4563918244f40000,0x13da329b6336471800000:0x1bc16d674ec80000,0x422ca8b0a00a425000000:0xde0b6b3a7640000"
 type Proposal struct {
-	Field    string
-	Value    string
-	Hash     common.Hash
-	Proposer common.Address
+	Key          string         `json:"key"`
+	Value        string         `json:"value"`
+	Hash         common.Hash    `json:"hash"`
+	Proposer     common.Address `json:"proposer"`
+	ApprovedHash *common.Hash   `json:"approved_hash"`
 }
 
 func (proposal *Proposal) Type() TransactionType {
@@ -162,13 +163,13 @@ func (proposal *Proposal) Action() string {
 }
 
 func (proposal *Proposal) applyTo(config *params.SenateConfig) error {
-	if len(proposal.Field) == 0 || len(proposal.Value) == 0 {
+	if len(proposal.Key) == 0 || len(proposal.Value) == 0 {
 		return errors.New("invalid proposal")
 	}
 
 	var ok bool
 	var err error
-	switch proposal.Field {
+	switch proposal.Key {
 	case "period":
 		config.Period, err = strconv.ParseUint(proposal.Value, 10, 64)
 		if err != nil || config.Period <= 0 {
@@ -225,7 +226,7 @@ func (proposal *Proposal) applyTo(config *params.SenateConfig) error {
 			})
 		}
 	default:
-		return errors.New("unknown field: " + proposal.Field)
+		return errors.New("unknown key: " + proposal.Key)
 	}
 	return nil
 }
@@ -243,7 +244,7 @@ func (proposal *Proposal) Decode(tx *types.Transaction, data []byte) error {
 
 	proposal.Hash = tx.Hash()
 	proposal.Proposer = txSender
-	proposal.Field, proposal.Value = slice[0], slice[1]
+	proposal.Key, proposal.Value = slice[0], slice[1]
 	return proposal.applyTo(new(params.SenateConfig))
 }
 
@@ -251,9 +252,10 @@ func (proposal *Proposal) Decode(tx *types.Transaction, data []byte) error {
 // proposal only come from the current candidates
 // hash is the hash of proposal tx
 type Declare struct {
-	ProposalHash common.Hash
-	Declarer     common.Address
-	Decision     bool
+	Hash         common.Hash    `json:"hash"`
+	ProposalHash common.Hash    `json:"proposal_hash"`
+	Declarer     common.Address `json:"declarer"`
+	Decision     bool           `json:"decision"`
 }
 
 func (declare *Declare) Type() TransactionType {
@@ -275,6 +277,7 @@ func (declare *Declare) Decode(tx *types.Transaction, data []byte) error {
 		return errors.New("invalid declare")
 	}
 
+	declare.Hash = tx.Hash()
 	declare.Declarer = txSender
 	declare.ProposalHash = common.HexToHash(slice[0])
 	declare.Decision = slice[1] == "yes"

@@ -19,6 +19,8 @@ type Root struct {
 	VoteHash      common.Hash
 	MintCntHash   common.Hash
 	ConfigHash    common.Hash
+	ProposalHash  common.Hash
+	DeclareHash   common.Hash
 }
 
 // Delegate come from custom tx which data like "senate:1:event:delegate".
@@ -38,6 +40,8 @@ type HeaderExtra struct {
 	CurrentBlockDelegates         []Delegate
 	CurrentBlockCandidates        []common.Address
 	CurrentBlockKickOutCandidates []common.Address
+	CurrentBlockProposals         []Proposal
+	CurrentBlockDeclares          []Declare
 	CurrentEpochValidators        SortableAddresses
 }
 
@@ -63,16 +67,16 @@ func NewHeaderExtra(data []byte) (HeaderExtra, error) {
 		}
 	}
 
-	var extra HeaderExtra
-	if err := rlp.DecodeBytes(buffer.Bytes(), &extra); err != nil {
+	var headerExtra HeaderExtra
+	if err := rlp.DecodeBytes(buffer.Bytes(), &headerExtra); err != nil {
 		return HeaderExtra{}, err
 	}
-	return extra, nil
+	return headerExtra, nil
 }
 
 // Encode encode header extra as rlp bytes.
-func (extra HeaderExtra) Encode() ([]byte, error) {
-	data, err := rlp.EncodeToBytes(extra)
+func (headerExtra HeaderExtra) Encode() ([]byte, error) {
+	data, err := rlp.EncodeToBytes(headerExtra)
 	if err != nil {
 		return nil, err
 	}
@@ -85,30 +89,30 @@ func (extra HeaderExtra) Encode() ([]byte, error) {
 }
 
 // Equal compares two HeaderExtras for equality.
-func (extra HeaderExtra) Equal(other HeaderExtra) bool {
-	if extra.Root != other.Root {
+func (headerExtra HeaderExtra) Equal(other HeaderExtra) bool {
+	if headerExtra.Root != other.Root {
 		return false
 	}
-	if extra.Epoch != other.Epoch {
+	if headerExtra.Epoch != other.Epoch {
 		return false
 	}
-	if extra.EpochTime != other.EpochTime {
+	if headerExtra.EpochTime != other.EpochTime {
 		return false
 	}
 
-	if len(extra.ChainConfig) != len(other.ChainConfig) {
+	if len(headerExtra.ChainConfig) != len(other.ChainConfig) {
 		return false
 	}
-	for idx, config := range extra.ChainConfig {
+	for idx, config := range headerExtra.ChainConfig {
 		if !config.Equal(other.ChainConfig[idx]) {
 			return false
 		}
 	}
 
-	if len(extra.CurrentBlockDelegates) != len(other.CurrentBlockDelegates) {
+	if len(headerExtra.CurrentBlockDelegates) != len(other.CurrentBlockDelegates) {
 		return false
 	}
-	for idx, delegate := range extra.CurrentBlockDelegates {
+	for idx, delegate := range headerExtra.CurrentBlockDelegates {
 		if delegate.Candidate != other.CurrentBlockDelegates[idx].Candidate {
 			return false
 		}
@@ -117,28 +121,46 @@ func (extra HeaderExtra) Equal(other HeaderExtra) bool {
 		}
 	}
 
-	if len(extra.CurrentBlockCandidates) != len(other.CurrentBlockCandidates) {
+	if len(headerExtra.CurrentBlockCandidates) != len(other.CurrentBlockCandidates) {
 		return false
 	}
-	for idx, candidate := range extra.CurrentBlockCandidates {
+	for idx, candidate := range headerExtra.CurrentBlockCandidates {
 		if candidate != other.CurrentBlockCandidates[idx] {
 			return false
 		}
 	}
 
-	if len(extra.CurrentBlockKickOutCandidates) != len(other.CurrentBlockKickOutCandidates) {
+	if len(headerExtra.CurrentBlockKickOutCandidates) != len(other.CurrentBlockKickOutCandidates) {
 		return false
 	}
-	for idx, candidate := range extra.CurrentBlockKickOutCandidates {
+	for idx, candidate := range headerExtra.CurrentBlockKickOutCandidates {
 		if candidate != other.CurrentBlockKickOutCandidates[idx] {
 			return false
 		}
 	}
 
-	if len(extra.CurrentEpochValidators) != len(other.CurrentEpochValidators) {
+	if len(headerExtra.CurrentBlockDeclares) != len(other.CurrentBlockDeclares) {
 		return false
 	}
-	for idx, validator := range extra.CurrentEpochValidators {
+	for idx, declare := range headerExtra.CurrentBlockDeclares {
+		if declare != other.CurrentBlockDeclares[idx] {
+			return false
+		}
+	}
+
+	if len(headerExtra.CurrentBlockProposals) != len(other.CurrentBlockProposals) {
+		return false
+	}
+	for idx, proposal := range headerExtra.CurrentBlockProposals {
+		if proposal != other.CurrentBlockProposals[idx] {
+			return false
+		}
+	}
+
+	if len(headerExtra.CurrentEpochValidators) != len(other.CurrentEpochValidators) {
+		return false
+	}
+	for idx, validator := range headerExtra.CurrentEpochValidators {
 		if validator.Address != other.CurrentEpochValidators[idx].Address {
 			return false
 		}
@@ -147,18 +169,14 @@ func (extra HeaderExtra) Equal(other HeaderExtra) bool {
 }
 
 func decodeHeaderExtra(header *types.Header) (HeaderExtra, error) {
-	extra := header.Extra
-	if len(extra) < extraVanity {
+	headerExtra := header.Extra
+	if len(headerExtra) < extraVanity {
 		return HeaderExtra{}, errMissingVanity
 	}
-	if len(extra) < extraVanity+extraSeal {
+	if len(headerExtra) < extraVanity+extraSeal {
 		return HeaderExtra{}, errMissingSignature
 	}
-	headerExtra, err := NewHeaderExtra(extra[extraVanity : len(extra)-extraSeal])
-	if err != nil {
-		return HeaderExtra{}, err
-	}
-	return headerExtra, nil
+	return NewHeaderExtra(headerExtra[extraVanity : len(headerExtra)-extraSeal])
 }
 
 // Ensure each element of an Delegate slice are not the same.

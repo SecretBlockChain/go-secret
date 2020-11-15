@@ -24,32 +24,10 @@ var (
 	votePrefix      = []byte("vote-")      // vote-{delegatorAddr}:{candidateAddr}
 	candidatePrefix = []byte("candidate-") // candidate-{candidateAddr}:
 	mintCntPrefix   = []byte("mintCnt-")   // mintCnt-{epoch}..{validator}:{count}
-	configPrefix    = []byte("config-")    // config..{params.SenateConfig}
+	configPrefix    = []byte("config")     // config:{params.SenateConfig}
+	proposalPrefix  = []byte("proposal-")  // proposal-{hash}:{Proposal}
+	declarePrefix   = []byte("declare-")   // declare-{hash}-{epoch}-{declarer}:{Declare}
 )
-
-func newEpochTrie(root common.Hash, db *trie.Database) (*Trie, error) {
-	return NewTrieWithPrefix(root, epochPrefix, db)
-}
-
-func newDelegateTrie(root common.Hash, db *trie.Database) (*Trie, error) {
-	return NewTrieWithPrefix(root, delegatePrefix, db)
-}
-
-func newVoteTrie(root common.Hash, db *trie.Database) (*Trie, error) {
-	return NewTrieWithPrefix(root, votePrefix, db)
-}
-
-func newCandidateTrie(root common.Hash, db *trie.Database) (*Trie, error) {
-	return NewTrieWithPrefix(root, candidatePrefix, db)
-}
-
-func newMintCntTrie(root common.Hash, db *trie.Database) (*Trie, error) {
-	return NewTrieWithPrefix(root, mintCntPrefix, db)
-}
-
-func newConfigTrie(root common.Hash, db *trie.Database) (*Trie, error) {
-	return NewTrieWithPrefix(root, configPrefix, db)
-}
 
 // SortableAddress sorted by votes.
 type SortableAddress struct {
@@ -81,6 +59,8 @@ type Snapshot struct {
 	candidateTrie *Trie
 	mintCntTrie   *Trie
 	configTrie    *Trie
+	proposalTrie  *Trie
+	declareTrie   *Trie
 	db            *trie.Database
 }
 
@@ -89,32 +69,6 @@ type Snapshot struct {
 func newSnapshot(diskdb ethdb.Database) (*Snapshot, error) {
 	snap := Snapshot{
 		db: trie.NewDatabase(diskdb),
-	}
-
-	var err error
-	snap.epochTrie, err = newEpochTrie(common.Hash{}, snap.db)
-	if err != nil {
-		return nil, err
-	}
-	snap.delegateTrie, err = newDelegateTrie(common.Hash{}, snap.db)
-	if err != nil {
-		return nil, err
-	}
-	snap.voteTrie, err = newVoteTrie(common.Hash{}, snap.db)
-	if err != nil {
-		return nil, err
-	}
-	snap.candidateTrie, err = newCandidateTrie(common.Hash{}, snap.db)
-	if err != nil {
-		return nil, err
-	}
-	snap.mintCntTrie, err = newMintCntTrie(common.Hash{}, snap.db)
-	if err != nil {
-		return nil, err
-	}
-	snap.configTrie, err = newConfigTrie(common.Hash{}, snap.db)
-	if err != nil {
-		return nil, err
 	}
 	return &snap, nil
 }
@@ -125,33 +79,65 @@ func loadSnapshot(diskdb ethdb.Database, root Root) (*Snapshot, error) {
 		root: root,
 		db:   trie.NewDatabase(diskdb),
 	}
-
-	var err error
-	snap.epochTrie, err = newEpochTrie(root.EpochHash, snap.db)
-	if err != nil {
-		return nil, err
-	}
-	snap.delegateTrie, err = newDelegateTrie(root.DelegateHash, snap.db)
-	if err != nil {
-		return nil, err
-	}
-	snap.voteTrie, err = newVoteTrie(root.VoteHash, snap.db)
-	if err != nil {
-		return nil, err
-	}
-	snap.candidateTrie, err = newCandidateTrie(root.CandidateHash, snap.db)
-	if err != nil {
-		return nil, err
-	}
-	snap.mintCntTrie, err = newMintCntTrie(root.MintCntHash, snap.db)
-	if err != nil {
-		return nil, err
-	}
-	snap.configTrie, err = newConfigTrie(root.ConfigHash, snap.db)
-	if err != nil {
-		return nil, err
-	}
 	return &snap, nil
+}
+
+// ensureTrie ensure the trie has been created, trie is not nil
+// the purpose is to create tire as needed.
+func (snap *Snapshot) ensureTrie(prefix []byte) (*Trie, error) {
+	var err error
+	switch string(prefix) {
+	case string(epochPrefix):
+		if snap.epochTrie != nil {
+			return snap.epochTrie, nil
+		}
+		snap.epochTrie, err = NewTrieWithPrefix(snap.root.EpochHash, prefix, snap.db)
+		return snap.epochTrie, err
+	case string(delegatePrefix):
+		if snap.delegateTrie != nil {
+			return snap.delegateTrie, nil
+		}
+		snap.delegateTrie, err = NewTrieWithPrefix(snap.root.DelegateHash, prefix, snap.db)
+		return snap.delegateTrie, err
+	case string(votePrefix):
+		if snap.voteTrie != nil {
+			return snap.voteTrie, nil
+		}
+		snap.voteTrie, err = NewTrieWithPrefix(snap.root.VoteHash, prefix, snap.db)
+		return snap.voteTrie, err
+	case string(candidatePrefix):
+		if snap.candidateTrie != nil {
+			return snap.candidateTrie, nil
+		}
+		snap.candidateTrie, err = NewTrieWithPrefix(snap.root.CandidateHash, prefix, snap.db)
+		return snap.candidateTrie, err
+	case string(mintCntPrefix):
+		if snap.mintCntTrie != nil {
+			return snap.mintCntTrie, nil
+		}
+		snap.mintCntTrie, err = NewTrieWithPrefix(snap.root.MintCntHash, prefix, snap.db)
+		return snap.mintCntTrie, err
+	case string(configPrefix):
+		if snap.configTrie != nil {
+			return snap.configTrie, nil
+		}
+		snap.configTrie, err = NewTrieWithPrefix(snap.root.ConfigHash, prefix, snap.db)
+		return snap.configTrie, err
+	case string(proposalPrefix):
+		if snap.proposalTrie != nil {
+			return snap.proposalTrie, nil
+		}
+		snap.proposalTrie, err = NewTrieWithPrefix(snap.root.ProposalHash, prefix, snap.db)
+		return snap.proposalTrie, err
+	case string(declarePrefix):
+		if snap.declareTrie != nil {
+			return snap.declareTrie, nil
+		}
+		snap.declareTrie, err = NewTrieWithPrefix(snap.root.DeclareHash, prefix, snap.db)
+		return snap.declareTrie, err
+	default:
+		return nil, errors.New("unknown prefix")
+	}
 }
 
 // apply creates a new authorization snapshot by applying the given headers to
@@ -169,6 +155,16 @@ func (snap *Snapshot) apply(header *types.Header, headerExtra HeaderExtra) error
 	}
 	for _, candidate := range headerExtra.CurrentBlockKickOutCandidates {
 		if err := snap.KickOutCandidate(candidate); err != nil {
+			return err
+		}
+	}
+	for _, proposal := range headerExtra.CurrentBlockProposals {
+		if err := snap.SubmitProposal(proposal); err != nil {
+			return err
+		}
+	}
+	for _, declare := range headerExtra.CurrentBlockDeclares {
+		if err := snap.Declare(headerExtra.Epoch, declare); err != nil {
 			return err
 		}
 	}
@@ -191,29 +187,61 @@ func (snap *Snapshot) apply(header *types.Header, headerExtra HeaderExtra) error
 
 // Root returns root of snapshot trie.
 func (snap *Snapshot) Root() (root Root, err error) {
-	root.EpochHash, err = snap.epochTrie.Commit(nil)
-	if err != nil {
-		return Root{}, err
+	root = snap.root
+	if snap.epochTrie != nil {
+		root.EpochHash, err = snap.epochTrie.Commit(nil)
+		if err != nil {
+			return Root{}, err
+		}
 	}
-	root.DelegateHash, err = snap.delegateTrie.Commit(nil)
-	if err != nil {
-		return Root{}, err
+
+	if snap.delegateTrie != nil {
+		root.DelegateHash, err = snap.delegateTrie.Commit(nil)
+		if err != nil {
+			return Root{}, err
+		}
 	}
-	root.VoteHash, err = snap.voteTrie.Commit(nil)
-	if err != nil {
-		return Root{}, err
+
+	if snap.voteTrie != nil {
+		root.VoteHash, err = snap.voteTrie.Commit(nil)
+		if err != nil {
+			return Root{}, err
+		}
 	}
-	root.CandidateHash, err = snap.candidateTrie.Commit(nil)
-	if err != nil {
-		return Root{}, err
+
+	if snap.candidateTrie != nil {
+		root.CandidateHash, err = snap.candidateTrie.Commit(nil)
+		if err != nil {
+			return Root{}, err
+		}
 	}
-	root.MintCntHash, err = snap.mintCntTrie.Commit(nil)
-	if err != nil {
-		return Root{}, err
+
+	if snap.mintCntTrie != nil {
+		root.MintCntHash, err = snap.mintCntTrie.Commit(nil)
+		if err != nil {
+			return Root{}, err
+		}
 	}
-	root.ConfigHash, err = snap.configTrie.Commit(nil)
-	if err != nil {
-		return Root{}, err
+
+	if snap.configTrie != nil {
+		root.ConfigHash, err = snap.configTrie.Commit(nil)
+		if err != nil {
+			return Root{}, err
+		}
+	}
+
+	if snap.proposalTrie != nil {
+		root.ProposalHash, err = snap.proposalTrie.Commit(nil)
+		if err != nil {
+			return Root{}, err
+		}
+	}
+
+	if snap.declareTrie != nil {
+		root.DeclareHash, err = snap.declareTrie.Commit(nil)
+		if err != nil {
+			return Root{}, err
+		}
 	}
 	return root, err
 }
@@ -250,15 +278,30 @@ func (snap *Snapshot) Commit(root Root) error {
 			return err
 		}
 	}
+	if snap.root.ProposalHash != root.ProposalHash {
+		if err := snap.db.Commit(root.ProposalHash, false, nil); err != nil {
+			return err
+		}
+	}
+	if snap.root.DeclareHash != root.DeclareHash {
+		if err := snap.db.Commit(root.DeclareHash, false, nil); err != nil {
+			return err
+		}
+	}
 	snap.root = root
 	return nil
 }
 
-// GetChainConfig get chain config from snapshot.
+// GetChainConfig returns chain config from snapshot.
 func (snap *Snapshot) GetChainConfig() (params.SenateConfig, error) {
+	configTrie, err := snap.ensureTrie(configPrefix)
+	if err != nil {
+		return params.SenateConfig{}, err
+	}
+
 	key := []byte("config")
+	data := configTrie.Get(key)
 	var config params.SenateConfig
-	data := snap.configTrie.Get(key)
 	if err := json.Unmarshal(data, &config); err != nil {
 		return params.SenateConfig{}, err
 	}
@@ -274,19 +317,29 @@ func (snap *Snapshot) SetChainConfig(config params.SenateConfig) error {
 		config.Validators = nil
 	}
 
+	configTrie, err := snap.ensureTrie(configPrefix)
+	if err != nil {
+		return err
+	}
+
 	key := []byte("config")
 	data, err := json.Marshal(config)
 	if err != nil {
 		return err
 	}
-	return snap.configTrie.TryUpdate(key, data)
+	return configTrie.TryUpdate(key, data)
 }
 
-// GetValidators get validators of current epoch from snapshot.
+// GetValidators returns validators of current epoch.
 func (snap *Snapshot) GetValidators() (SortableAddresses, error) {
+	epochTrie, err := snap.ensureTrie(epochPrefix)
+	if err != nil {
+		return nil, err
+	}
+
 	key := []byte("validator")
 	var validators SortableAddresses
-	validatorsRLP := snap.epochTrie.Get(key)
+	validatorsRLP := epochTrie.Get(key)
 	if err := rlp.DecodeBytes(validatorsRLP, &validators); err != nil {
 		return nil, fmt.Errorf("failed to decode validators: %s", err)
 	}
@@ -301,7 +354,11 @@ func (snap *Snapshot) SetValidators(validators SortableAddresses) error {
 		return fmt.Errorf("failed to encode validators to rlp bytes: %s", err)
 	}
 
-	return snap.epochTrie.TryUpdate(key, validatorsRLP)
+	epochTrie, err := snap.ensureTrie(epochPrefix)
+	if err != nil {
+		return err
+	}
+	return epochTrie.TryUpdate(key, validatorsRLP)
 }
 
 // CountMinted count the minted of each validator.
@@ -311,9 +368,14 @@ func (snap *Snapshot) CountMinted(epoch uint64) (SortableAddresses, error) {
 		return nil, err
 	}
 
+	mintCntTrie, err := snap.ensureTrie(mintCntPrefix)
+	if err != nil {
+		return nil, err
+	}
+
 	prefix := make([]byte, 8)
 	binary.BigEndian.PutUint64(prefix, epoch)
-	iter := trie.NewIterator(snap.mintCntTrie.PrefixIterator(prefix))
+	iter := trie.NewIterator(mintCntTrie.PrefixIterator(prefix))
 
 	mapper := make(map[common.Address]int64)
 	for iter.Next() {
@@ -337,21 +399,36 @@ func (snap *Snapshot) CountMinted(epoch uint64) (SortableAddresses, error) {
 
 // ForgeBlock write validator of block to snapshot.
 func (snap *Snapshot) MintBlock(epoch, number uint64, validator common.Address) error {
+	mintCntTrie, err := snap.ensureTrie(mintCntPrefix)
+	if err != nil {
+		return err
+	}
+
 	key := make([]byte, 16)
 	binary.BigEndian.PutUint64(key[:8], epoch)
 	binary.BigEndian.PutUint64(key[8:], number)
-	return snap.mintCntTrie.TryUpdate(key, validator.Bytes())
+	return mintCntTrie.TryUpdate(key, validator.Bytes())
 }
 
 // CountVotes count the votes of candidate.
 func (snap *Snapshot) CountVotes(state *state.StateDB, candidateAddr common.Address) (*big.Int, error) {
-	candidate, err := snap.candidateTrie.TryGet(candidateAddr.Bytes())
+	delegateTrie, err := snap.ensureTrie(delegatePrefix)
+	if err != nil {
+		return nil, err
+	}
+
+	candidateTrie, err := snap.ensureTrie(candidatePrefix)
+	if err != nil {
+		return nil, err
+	}
+
+	candidate, err := candidateTrie.TryGet(candidateAddr.Bytes())
 	if err != nil || candidate == nil {
 		return nil, errors.New("no candidate")
 	}
 
 	votes := big.NewInt(0)
-	delegateIterator := trie.NewIterator(snap.delegateTrie.PrefixIterator(candidate))
+	delegateIterator := trie.NewIterator(delegateTrie.PrefixIterator(candidate))
 	for delegateIterator.Next() {
 		delegator := delegateIterator.Value
 		delegatorAddr := common.BytesToAddress(delegator)
@@ -368,7 +445,12 @@ func (snap *Snapshot) EnoughCandidates(n int) (int, bool) {
 		return 0, true
 	}
 
-	iterCandidate := trie.NewIterator(snap.candidateTrie.NodeIterator(nil))
+	candidateTrie, err := snap.ensureTrie(candidatePrefix)
+	if err != nil {
+		return 0, false
+	}
+
+	iterCandidate := trie.NewIterator(candidateTrie.NodeIterator(nil))
 	if iterCandidate.Next() {
 		candidateCount++
 		if candidateCount >= n {
@@ -384,7 +466,17 @@ func (snap *Snapshot) TopCandidates(state *state.StateDB, n int) (SortableAddres
 		return nil, nil
 	}
 
-	iterCandidate := trie.NewIterator(snap.candidateTrie.NodeIterator(nil))
+	delegateTrie, err := snap.ensureTrie(delegatePrefix)
+	if err != nil {
+		return nil, err
+	}
+
+	candidateTrie, err := snap.ensureTrie(candidatePrefix)
+	if err != nil {
+		return nil, err
+	}
+
+	iterCandidate := trie.NewIterator(candidateTrie.NodeIterator(nil))
 	existCandidate := iterCandidate.Next()
 	if !existCandidate {
 		return nil, nil
@@ -395,7 +487,7 @@ func (snap *Snapshot) TopCandidates(state *state.StateDB, n int) (SortableAddres
 	for existCandidate {
 		candidate := iterCandidate.Value
 		candidateAddr := common.BytesToAddress(candidate)
-		delegateIterator := trie.NewIterator(snap.delegateTrie.PrefixIterator(candidate))
+		delegateIterator := trie.NewIterator(delegateTrie.PrefixIterator(candidate))
 		existDelegator := delegateIterator.Next()
 		if !existDelegator {
 			votes[candidateAddr] = big.NewInt(0)
@@ -432,37 +524,56 @@ func (snap *Snapshot) TopCandidates(state *state.StateDB, n int) (SortableAddres
 
 // BecomeCandidate add a new candidate.
 func (snap *Snapshot) BecomeCandidate(candidateAddr common.Address) error {
+	candidateTrie, err := snap.ensureTrie(candidatePrefix)
+	if err != nil {
+		return err
+	}
 	candidate := candidateAddr.Bytes()
-	return snap.candidateTrie.TryUpdate(candidate, candidate)
+	return candidateTrie.TryUpdate(candidate, candidate)
 }
 
 // KickOutCandidate kick out existing candidate.
 func (snap *Snapshot) KickOutCandidate(candidateAddr common.Address) error {
+	voteTrie, err := snap.ensureTrie(votePrefix)
+	if err != nil {
+		return err
+	}
+
+	delegateTrie, err := snap.ensureTrie(delegatePrefix)
+	if err != nil {
+		return err
+	}
+
+	candidateTrie, err := snap.ensureTrie(candidatePrefix)
+	if err != nil {
+		return err
+	}
+
 	candidate := candidateAddr.Bytes()
-	err := snap.candidateTrie.TryDelete(candidate)
+	err = candidateTrie.TryDelete(candidate)
 	if err != nil {
 		if _, ok := err.(*trie.MissingNodeError); !ok {
 			return err
 		}
 	}
-	iter := trie.NewIterator(snap.delegateTrie.PrefixIterator(candidate))
+	iter := trie.NewIterator(delegateTrie.PrefixIterator(candidate))
 	for iter.Next() {
 		delegator := iter.Value
 		key := append(candidate, delegator...)
-		err = snap.delegateTrie.TryDelete(key)
+		err = delegateTrie.TryDelete(key)
 		if err != nil {
 			if _, ok := err.(*trie.MissingNodeError); !ok {
 				return err
 			}
 		}
-		v, err := snap.voteTrie.TryGet(delegator)
+		v, err := voteTrie.TryGet(delegator)
 		if err != nil {
 			if _, ok := err.(*trie.MissingNodeError); !ok {
 				return err
 			}
 		}
 		if err == nil && bytes.Equal(v, candidate) {
-			err = snap.voteTrie.TryDelete(delegator)
+			err = voteTrie.TryDelete(delegator)
 			if err != nil {
 				if _, ok := err.(*trie.MissingNodeError); !ok {
 					return err
@@ -475,9 +586,23 @@ func (snap *Snapshot) KickOutCandidate(candidateAddr common.Address) error {
 
 // Delegate vote for a candidate, the candidateAddr must be candidate.
 func (snap *Snapshot) Delegate(delegatorAddr, candidateAddr common.Address) error {
-	delegator, candidate := delegatorAddr.Bytes(), candidateAddr.Bytes()
+	voteTrie, err := snap.ensureTrie(votePrefix)
+	if err != nil {
+		return err
+	}
 
-	candidateInTrie, err := snap.candidateTrie.TryGet(candidate)
+	delegateTrie, err := snap.ensureTrie(delegatePrefix)
+	if err != nil {
+		return err
+	}
+
+	candidateTrie, err := snap.ensureTrie(candidatePrefix)
+	if err != nil {
+		return err
+	}
+
+	delegator, candidate := delegatorAddr.Bytes(), candidateAddr.Bytes()
+	candidateInTrie, err := candidateTrie.TryGet(candidate)
 	if err != nil {
 		return err
 	}
@@ -485,26 +610,40 @@ func (snap *Snapshot) Delegate(delegatorAddr, candidateAddr common.Address) erro
 		return errors.New("invalid candidate to delegate")
 	}
 
-	oldCandidate, err := snap.voteTrie.TryGet(delegator)
+	oldCandidate, err := voteTrie.TryGet(delegator)
 	if err != nil {
 		if _, ok := err.(*trie.MissingNodeError); !ok {
 			return err
 		}
 	}
 	if oldCandidate != nil {
-		snap.delegateTrie.Delete(append(oldCandidate, delegator...))
+		delegateTrie.Delete(append(oldCandidate, delegator...))
 	}
-	if err = snap.delegateTrie.TryUpdate(append(candidate, delegator...), delegator); err != nil {
+	if err = delegateTrie.TryUpdate(append(candidate, delegator...), delegator); err != nil {
 		return err
 	}
-	return snap.voteTrie.TryUpdate(delegator, candidate)
+	return voteTrie.TryUpdate(delegator, candidate)
 }
 
 // UnDelegate cancel vote for a candidate, the candidateAddr must be candidate.
 func (snap *Snapshot) UnDelegate(delegatorAddr, candidateAddr common.Address) error {
-	delegator, candidate := delegatorAddr.Bytes(), candidateAddr.Bytes()
+	voteTrie, err := snap.ensureTrie(votePrefix)
+	if err != nil {
+		return err
+	}
 
-	candidateInTrie, err := snap.candidateTrie.TryGet(candidate)
+	delegateTrie, err := snap.ensureTrie(delegatePrefix)
+	if err != nil {
+		return err
+	}
+
+	candidateTrie, err := snap.ensureTrie(candidatePrefix)
+	if err != nil {
+		return err
+	}
+
+	delegator, candidate := delegatorAddr.Bytes(), candidateAddr.Bytes()
+	candidateInTrie, err := candidateTrie.TryGet(candidate)
 	if err != nil {
 		return err
 	}
@@ -512,7 +651,7 @@ func (snap *Snapshot) UnDelegate(delegatorAddr, candidateAddr common.Address) er
 		return errors.New("invalid candidate to undelegate")
 	}
 
-	oldCandidate, err := snap.voteTrie.TryGet(delegator)
+	oldCandidate, err := voteTrie.TryGet(delegator)
 	if err != nil {
 		return err
 	}
@@ -520,8 +659,102 @@ func (snap *Snapshot) UnDelegate(delegatorAddr, candidateAddr common.Address) er
 		return errors.New("mismatch candidate to undelegate")
 	}
 
-	if err = snap.delegateTrie.TryDelete(append(candidate, delegator...)); err != nil {
+	if err = delegateTrie.TryDelete(append(candidate, delegator...)); err != nil {
 		return err
 	}
-	return snap.voteTrie.TryDelete(delegator)
+	return voteTrie.TryDelete(delegator)
+}
+
+// Declare declare the decision on the proposal.
+func (snap *Snapshot) Declare(epoch uint64, declare Declare) error {
+	declareTrie, err := snap.ensureTrie(declarePrefix)
+	if err != nil {
+		return err
+	}
+
+	hash := declare.ProposalHash.Bytes()
+	declarer := declare.Declarer.Bytes()
+	key := make([]byte, len(hash)+8+len(declarer))
+	copy(key, hash)
+	binary.BigEndian.PutUint64(key[len(hash):len(hash)+8], epoch)
+	copy(key[len(hash)+8:], declarer)
+
+	jsb, err := json.Marshal(declare)
+	if err != nil {
+		return err
+	}
+	return declareTrie.TryUpdate(key, jsb)
+}
+
+// GetDeclarations returns all declarations in the epoch.
+func (snap *Snapshot) GetDeclarations(proposalHash common.Hash, epoch uint64) ([]Declare, error) {
+	declareTrie, err := snap.ensureTrie(declarePrefix)
+	if err != nil {
+		return nil, err
+	}
+
+	hash := proposalHash.Bytes()
+	prefix := make([]byte, len(hash)+8)
+	copy(prefix, hash)
+	binary.BigEndian.PutUint64(prefix[len(hash):len(hash)+8], epoch)
+
+	var declarations []Declare
+	iter := trie.NewIterator(declareTrie.PrefixIterator(prefix))
+	for iter.Next() {
+		var declare Declare
+		if err = json.Unmarshal(iter.Value, &declare); err != nil {
+			continue
+		}
+		declarations = append(declarations, declare)
+	}
+	return declarations, nil
+}
+
+// GetProposal returns the specified proposal
+// the hash is transaction hash of proposal.
+func (snap *Snapshot) GetProposal(hash common.Hash) (Proposal, error) {
+	proposalTrie, err := snap.ensureTrie(proposalPrefix)
+	if err != nil {
+		return Proposal{}, err
+	}
+
+	data := proposalTrie.Get(hash.Bytes())
+	if data == nil {
+		return Proposal{}, errors.New("proposal not found, hash: " + hash.String())
+	}
+
+	var proposal Proposal
+	if err = json.Unmarshal(data, &proposal); err != nil {
+		return Proposal{}, err
+	}
+	return proposal, nil
+}
+
+// SubmitProposal submit a new proposal.
+func (snap *Snapshot) SubmitProposal(proposal Proposal) error {
+	proposalTrie, err := snap.ensureTrie(proposalPrefix)
+	if err != nil {
+		return err
+	}
+
+	value, err := json.Marshal(proposal)
+	if err != nil {
+		return err
+	}
+	return proposalTrie.TryUpdate(proposal.Hash.Bytes(), value)
+}
+
+// ApproveProposal approve the proposal
+// the hash is transaction hash of proposal, txHash is transaction hash of declare.
+func (snap *Snapshot) ApproveProposal(hash, txHash common.Hash) (Proposal, error) {
+	proposal, err := snap.GetProposal(hash)
+	if err != nil {
+		return Proposal{}, err
+	}
+
+	proposal.ApprovedHash = &txHash
+	if err = snap.SubmitProposal(proposal); err != nil {
+		return Proposal{}, err
+	}
+	return proposal, nil
 }

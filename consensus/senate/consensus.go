@@ -276,7 +276,7 @@ func (senate *Senate) Prepare(chain consensus.ChainHeaderReader, header *types.H
 	header.Difficulty = senate.CalcDifficulty(chain, 0, nil)
 
 	// Initialize HeaderExtra, update epoch for block
-	var extra HeaderExtra
+	var headerExtra HeaderExtra
 	var config params.SenateConfig
 	number := header.Number.Uint64()
 	parent := chain.GetHeader(header.ParentHash, number-1)
@@ -291,15 +291,15 @@ func (senate *Senate) Prepare(chain consensus.ChainHeaderReader, header *types.H
 			header.Time = uint64(now)
 		}
 
-		extra.Epoch = 1
-		extra.EpochTime = header.Time
+		headerExtra.Epoch = 1
+		headerExtra.EpochTime = header.Time
 	} else {
-		parentExtra, err := decodeHeaderExtra(parent)
+		parentHeaderExtra, err := decodeHeaderExtra(parent)
 		if err != nil {
 			return err
 		}
 
-		config, err = senate.chainConfigByHash(parentExtra.Root.ConfigHash)
+		config, err = senate.chainConfigByHash(parentHeaderExtra.Root.ConfigHash)
 		if err != nil {
 			return err
 		}
@@ -310,18 +310,18 @@ func (senate *Senate) Prepare(chain consensus.ChainHeaderReader, header *types.H
 			header.Time = uint64(now)
 		}
 
-		extra.Root = parentExtra.Root
-		extra.Epoch = parentExtra.Epoch
-		extra.EpochTime = parentExtra.EpochTime
-		duration := header.Time - parentExtra.EpochTime
+		headerExtra.Root = parentHeaderExtra.Root
+		headerExtra.Epoch = parentHeaderExtra.Epoch
+		headerExtra.EpochTime = parentHeaderExtra.EpochTime
+		duration := header.Time - parentHeaderExtra.EpochTime
 		if duration/config.Epoch >= 1 && duration%config.Epoch > 0 {
-			extra.Epoch = parentExtra.Epoch + 1
-			extra.EpochTime = header.Time
+			headerExtra.Epoch = parentHeaderExtra.Epoch + 1
+			headerExtra.EpochTime = header.Time
 		}
 	}
 
 	// Ensure the extra data has HeaderExtra struct
-	data, err := extra.Encode()
+	data, err := headerExtra.Encode()
 	if err != nil {
 		return err
 	}
@@ -403,22 +403,28 @@ func (senate *Senate) FinalizeAndAssemble(chain consensus.ChainHeaderReader, hea
 	log.Trace("[DPOS] FinalizeAndAssemble", "number", header.Number.Int64())
 
 	// Load snapshot of last block
-	extra, err := decodeHeaderExtra(header)
+	oldHeaderExtra, err := decodeHeaderExtra(header)
 	if err != nil {
 		return nil, err
 	}
-	extra.CurrentBlockDelegates = nil
-	extra.CurrentBlockCandidates = nil
-	extra.CurrentEpochValidators = nil
-	extra.CurrentBlockKickOutCandidates = nil
-
-	snap, err := loadSnapshot(senate.db, extra.Root)
+	headerExtra := HeaderExtra{
+		Epoch:     oldHeaderExtra.Epoch,
+		EpochTime: oldHeaderExtra.EpochTime,
+	}
+	parent := chain.GetHeader(header.ParentHash, header.Number.Uint64()-1)
+	if header.Number.Int64() > 1 {
+		parentHeaderExtra, err := decodeHeaderExtra(parent)
+		if err != nil {
+			return nil, err
+		}
+		headerExtra.Root = parentHeaderExtra.Root
+	}
+	snap, err := loadSnapshot(senate.db, headerExtra.Root)
 	if err != nil {
 		return nil, err
 	}
 
 	// Get the chain configuration
-	parent := chain.GetHeader(header.ParentHash, header.Number.Uint64()-1)
 	config, err := senate.chainConfig(parent)
 	if err != nil {
 		return nil, err
@@ -428,30 +434,30 @@ func (senate *Senate) FinalizeAndAssemble(chain consensus.ChainHeaderReader, hea
 	senate.accumulateRewards(config, state, header)
 
 	// Save validator of block to snapshot
-	if err = snap.MintBlock(extra.Epoch, header.Number.Uint64(), header.Coinbase); err != nil {
+	if err = snap.MintBlock(headerExtra.Epoch, header.Number.Uint64(), header.Coinbase); err != nil {
 		return nil, err
 	}
 
 	// Parse and process custom transactions
-	senate.processTransactions(config, state, header, snap, &extra, txs, receipts)
+	senate.processTransactions(config, state, header, snap, &headerExtra, txs, receipts)
 
 	// Elect validators in first block for epoch
-	if err = senate.tryElect(config, state, header, snap, &extra); err != nil {
+	if err = senate.tryElect(config, state, header, snap, &headerExtra); err != nil {
 		log.Warn("[DPOS] Failed to try elect", "reason", err)
 		return nil, err
 	}
 
 	// Save snapshot of current block to db
-	extra.Root, err = snap.Root()
+	headerExtra.Root, err = snap.Root()
 	if err != nil {
 		return nil, err
 	}
-	if err = snap.Commit(extra.Root); err != nil {
+	if err = snap.Commit(headerExtra.Root); err != nil {
 		return nil, err
 	}
 
 	// Write HeaderExtra of current block into header.Extra
-	data, err := extra.Encode()
+	data, err := headerExtra.Encode()
 	if err != nil {
 		return nil, err
 	}

@@ -180,11 +180,11 @@ func (senate *Senate) chainConfig(header *types.Header) (params.SenateConfig, er
 		return *senate.config, nil
 	}
 
-	extra, err := decodeHeaderExtra(header)
+	headerExtra, err := decodeHeaderExtra(header)
 	if err != nil {
 		return params.SenateConfig{}, err
 	}
-	return senate.chainConfigByHash(extra.Root.ConfigHash)
+	return senate.chainConfigByHash(headerExtra.Root.ConfigHash)
 }
 
 // Gets the chain config by tire node hash value.
@@ -194,15 +194,9 @@ func (senate *Senate) chainConfigByHash(configHash common.Hash) (params.SenateCo
 		return *senate.config, nil
 	}
 
-	db := trie.NewDatabase(senate.db)
-	configTrie, err := newConfigTrie(configHash, db)
-	if err != nil {
-		return params.SenateConfig{}, ErrChainConfigMissing
-	}
-
 	snap := Snapshot{
-		db:         db,
-		configTrie: configTrie,
+		db:   trie.NewDatabase(senate.db),
+		root: Root{ConfigHash: configHash},
 	}
 	config, err := snap.GetChainConfig()
 	if err != nil {
