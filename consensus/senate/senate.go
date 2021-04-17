@@ -4,7 +4,6 @@ import (
 	"encoding/binary"
 	"errors"
 	"math/big"
-	"math/rand"
 	"sync"
 	"time"
 
@@ -272,20 +271,28 @@ func (senate *Senate) tryElect(config params.SenateConfig, state *state.StateDB,
 	}
 
 	// Elect next epoch validators by votes
-	candidates, err := snap.TopCandidates(state, int(config.MaxValidatorsCount))
+	//candidates, err := snap.TopCandidates(state, int(config.MaxValidatorsCount))
+
+	// Shuffle candidates
+	seed := int64(binary.LittleEndian.Uint32(crypto.Keccak512(header.ParentHash.Bytes())))
+	candidates, err := snap.RandCandidates(seed, int(config.MaxValidatorsCount))
 	if err != nil {
 		return err
 	}
+	//TODO test print log
+	printLog(candidates)
 
-	// Shuffle candidates of next epoch
-	seed := int64(binary.LittleEndian.Uint32(crypto.Keccak512(header.ParentHash.Bytes())))
-	r := rand.New(rand.NewSource(seed))
-	for i := len(candidates) - 1; i > 0; i-- {
-		j := int(r.Int31n(int32(i + 1)))
-		candidates[i], candidates[j] = candidates[j], candidates[i]
-	}
 	headerExtra.CurrentEpochValidators = append(headerExtra.CurrentEpochValidators, candidates...)
 	return snap.SetValidators(headerExtra.CurrentEpochValidators)
+}
+
+func printLog(candidates SortableAddresses)  {
+
+	addrs := ""
+	for _,addr := range candidates {
+		addrs = addr.Address.String() + "\n"
+	}
+	log.Info("rand candidates ",addrs)
 }
 
 // Credits the coinbase of the given block with the mining reward.
