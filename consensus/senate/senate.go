@@ -254,7 +254,7 @@ func (senate *Senate) tryElect(config params.SenateConfig, state *state.StateDB,
 			if candidateCount <= safeSize {
 				log.Info("[DPOS] No more candidate can be kick out",
 					"prevEpochID", headerExtra.Epoch-1,
-					"candidateCount", candidateCount, "needKickOutCount", len(needKickOutValidators)-i)
+					"candidateCount", candidateCount, "needKickOutCount", len(needKickOutValidators)-i,"Epoch", config.Epoch,"Period", config.Period)
 				return nil
 			}
 
@@ -280,20 +280,20 @@ func (senate *Senate) tryElect(config params.SenateConfig, state *state.StateDB,
 		return err
 	}
 	//TODO test print log
-	printLog(candidates)
+	//printLog(candidates, int(config.MaxValidatorsCount))
 
 	headerExtra.CurrentEpochValidators = append(headerExtra.CurrentEpochValidators, candidates...)
 	return snap.SetValidators(headerExtra.CurrentEpochValidators)
 }
 
-func printLog(candidates SortableAddresses)  {
-
-	addrs := ""
-	for _,addr := range candidates {
-		addrs = addr.Address.String() + "\n"
-	}
-	log.Info("rand candidates ",addrs)
-}
+//func printLog(candidates SortableAddresses , count int)  {
+//
+//	addrS := fmt.Sprintf("\n count %d | \n",count)
+//	for _,addr := range candidates {
+//		addrS += addr.Address.String() + "\n"
+//	}
+//	log.Info("rand candidates ",addrS)
+//}
 
 // Credits the coinbase of the given block with the mining reward.
 func (senate *Senate) accumulateRewards(config params.SenateConfig, state *state.StateDB, header *types.Header) {

@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/SecretBlockChain/go-secret/log"
 	"math/big"
 	"math/rand"
 	"sort"
@@ -461,6 +462,14 @@ func (snap *Snapshot) EnoughCandidates(n int) (int, bool) {
 	return candidateCount, false
 }
 
+func printLog(candidates SortableAddresses , count int)  {
+
+	addrS := fmt.Sprintf("\n count %d | \n",count)
+	for _,addr := range candidates {
+		addrS += addr.Address.String() + "\n"
+	}
+	log.Info("rand candidates ",addrS)
+}
 // TopCandidates candidates with the top N votes.
 func (snap *Snapshot) TopCandidates(state *state.StateDB, n int) (SortableAddresses, error) {
 	if n <= 0 {
@@ -557,6 +566,8 @@ func (snap *Snapshot) RandCandidates(seed int64, n int) (SortableAddresses, erro
 	if len(candidates) > n {
 		candidates = candidates[:n]
 	}
+	//TODO test print log
+	printLog(candidates,n)
 	return candidates, nil
 }
 
