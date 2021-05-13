@@ -219,8 +219,8 @@ func (senate *Senate) verifyCascadingFields(chain consensus.ChainHeaderReader, h
 }
 
 func Root2String(root Root) string {
-	return fmt.Sprintf("CandidateHash=%s \nConfigHash=%s \nDeclareHash=%s \nDelegateHash= %s \nCandidateHash=%s \nEpochHash=%s \nMintCntHash=%s \nProposalHash=%s \nVoteHash=%s",root.CandidateHash.String(),
-		root.ConfigHash.String(),root.DeclareHash.String(),root.DelegateHash.String(),root.CandidateHash.String(),root.EpochHash.String(),root.MintCntHash.String(),root.ProposalHash.String(),root.VoteHash.String())
+	return fmt.Sprintf("CandidateHash=%s \nConfigHash=%s \nDeclareHash=%s \nCandidateHash=%s \nEpochHash=%s \nMintCntHash=%s ",root.CandidateHash.String(),
+		root.ConfigHash.String(),root.DeclareHash.String(),root.CandidateHash.String(),root.EpochHash.String(),root.MintCntHash.String(),)
 }
 
 // VerifyUncles verifies that the given block's uncles conform to the consensus

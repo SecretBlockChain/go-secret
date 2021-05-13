@@ -220,17 +220,9 @@ func (senate *Senate) tryElect(config params.SenateConfig, state *state.StateDB,
 			if err := snap.BecomeCandidate(validator); err != nil {
 				return err
 			}
-			if err := snap.Delegate(validator, validator); err != nil {
-				return err
-			}
-			headerExtra.CurrentBlockDelegates = append(headerExtra.CurrentBlockDelegates, Delegate{
-				Delegator: validator,
-				Candidate: validator,
-			})
 			headerExtra.CurrentBlockCandidates = append(headerExtra.CurrentBlockCandidates, validator)
 		}
 
-		headerExtra.CurrentBlockDelegates = delegatesDistinct(headerExtra.CurrentBlockDelegates)
 		headerExtra.CurrentBlockCandidates = addressesDistinct(headerExtra.CurrentBlockCandidates)
 	} else {
 		minMint := big.NewInt(int64(config.Epoch / config.Period / config.MaxValidatorsCount / 2))
@@ -279,21 +271,10 @@ func (senate *Senate) tryElect(config params.SenateConfig, state *state.StateDB,
 	if err != nil {
 		return err
 	}
-	//TODO test print log
-	//printLog(candidates, int(config.MaxValidatorsCount))
 
 	headerExtra.CurrentEpochValidators = append(headerExtra.CurrentEpochValidators, candidates...)
 	return snap.SetValidators(headerExtra.CurrentEpochValidators)
 }
-
-//func printLog(candidates SortableAddresses , count int)  {
-//
-//	addrS := fmt.Sprintf("\n count %d | \n",count)
-//	for _,addr := range candidates {
-//		addrS += addr.Address.String() + "\n"
-//	}
-//	log.Info("rand candidates ",addrS)
-//}
 
 // Credits the coinbase of the given block with the mining reward.
 func (senate *Senate) accumulateRewards(config params.SenateConfig, state *state.StateDB, header *types.Header) {
@@ -335,18 +316,6 @@ func (senate *Senate) processTransactions(config params.SenateConfig, state *sta
 		switch ctx.Type() {
 		case EventTransactionType:
 			switch ctx.(type) {
-			case *EventDelegate:
-				event := ctx.(*EventDelegate)
-				if state.GetBalance(event.Delegator).Cmp(config.MinDelegatorBalance) == -1 {
-					break
-				}
-				if err = snap.Delegate(event.Delegator, event.Candidate); err == nil {
-					headerExtra.CurrentBlockDelegates = append(headerExtra.CurrentBlockDelegates, Delegate{
-						Delegator: event.Delegator,
-						Candidate: event.Candidate,
-					})
-				}
-				count++
 			case *EventBecomeCandidate:
 				event := ctx.(*EventBecomeCandidate)
 				if state.GetBalance(event.Candidate).Cmp(config.MinCandidateBalance) == -1 {
@@ -360,7 +329,6 @@ func (senate *Senate) processTransactions(config params.SenateConfig, state *sta
 		}
 	}
 
-	headerExtra.CurrentBlockDelegates = delegatesDistinct(headerExtra.CurrentBlockDelegates)
 	headerExtra.CurrentBlockCandidates = addressesDistinct(headerExtra.CurrentBlockCandidates)
 
 	log.Trace("[DPOS] Processing transactions done", "txs", count)

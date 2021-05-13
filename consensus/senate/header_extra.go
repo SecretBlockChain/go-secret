@@ -14,20 +14,10 @@ import (
 // Root is the state tree root.
 type Root struct {
 	EpochHash     common.Hash
-	DelegateHash  common.Hash
 	CandidateHash common.Hash
-	VoteHash      common.Hash
 	MintCntHash   common.Hash
 	ConfigHash    common.Hash
-	ProposalHash  common.Hash
 	DeclareHash   common.Hash
-}
-
-// Delegate come from custom tx which data like "senate:1:event:delegate".
-// Sender of tx is Delegator, the tx.to is Candidate.
-type Delegate struct {
-	Delegator common.Address
-	Candidate common.Address
 }
 
 // HeaderExtra is the struct of info in header.Extra[extraVanity:len(header.extra)-extraSeal].
@@ -37,10 +27,8 @@ type HeaderExtra struct {
 	Epoch                         uint64
 	EpochTime                     uint64
 	ChainConfig                   []params.SenateConfig
-	CurrentBlockDelegates         []Delegate
 	CurrentBlockCandidates        []common.Address
 	CurrentBlockKickOutCandidates []common.Address
-	CurrentBlockProposals         []Proposal
 	CurrentBlockDeclares          []Declare
 	CurrentEpochValidators        SortableAddresses
 }
@@ -109,18 +97,6 @@ func (headerExtra HeaderExtra) Equal(other HeaderExtra) bool {
 		}
 	}
 
-	if len(headerExtra.CurrentBlockDelegates) != len(other.CurrentBlockDelegates) {
-		return false
-	}
-	for idx, delegate := range headerExtra.CurrentBlockDelegates {
-		if delegate.Candidate != other.CurrentBlockDelegates[idx].Candidate {
-			return false
-		}
-		if delegate.Delegator != other.CurrentBlockDelegates[idx].Delegator {
-			return false
-		}
-	}
-
 	if len(headerExtra.CurrentBlockCandidates) != len(other.CurrentBlockCandidates) {
 		return false
 	}
@@ -148,15 +124,6 @@ func (headerExtra HeaderExtra) Equal(other HeaderExtra) bool {
 		}
 	}
 
-	if len(headerExtra.CurrentBlockProposals) != len(other.CurrentBlockProposals) {
-		return false
-	}
-	for idx, proposal := range headerExtra.CurrentBlockProposals {
-		if proposal != other.CurrentBlockProposals[idx] {
-			return false
-		}
-	}
-
 	if len(headerExtra.CurrentEpochValidators) != len(other.CurrentEpochValidators) {
 		return false
 	}
@@ -177,23 +144,6 @@ func decodeHeaderExtra(header *types.Header) (HeaderExtra, error) {
 		return HeaderExtra{}, errMissingSignature
 	}
 	return NewHeaderExtra(headerExtra[extraVanity : len(headerExtra)-extraSeal])
-}
-
-// Ensure each element of an Delegate slice are not the same.
-func delegatesDistinct(slice []Delegate) []Delegate {
-	if len(slice) <= 1 {
-		return slice
-	}
-
-	set := make(map[Delegate]struct{})
-	result := make([]Delegate, 0, len(slice))
-	for _, address := range slice {
-		if _, ok := set[address]; !ok {
-			set[address] = struct{}{}
-			result = append(result, address)
-		}
-	}
-	return result
 }
 
 // Ensure each element of an common.Address slice are not the same.

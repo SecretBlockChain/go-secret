@@ -14,9 +14,7 @@ func TestEncodeHeaderExtra(t *testing.T) {
 	var headerExtra HeaderExtra
 	rand := rand.New(rand.NewSource(time.Now().Unix()))
 	headerExtra.Root.EpochHash.Generate(rand, 0)
-	headerExtra.Root.DelegateHash.Generate(rand, 0)
 	headerExtra.Root.CandidateHash.Generate(rand, 0)
-	headerExtra.Root.VoteHash.Generate(rand, 0)
 	headerExtra.Root.MintCntHash.Generate(rand, 0)
 
 	address1 := common.HexToAddress("0xcc7c8317b21e1cea6139700c3c46c21af998d14c")
@@ -25,7 +23,6 @@ func TestEncodeHeaderExtra(t *testing.T) {
 		SortableAddress{Address: address1, Weight: big.NewInt(0)},
 		SortableAddress{Address: address2, Weight: big.NewInt(0)},
 	}
-	headerExtra.CurrentBlockDelegates = []Delegate{{Delegator: address1, Candidate: address2}}
 	headerExtra.CurrentBlockCandidates = []common.Address{address1, address2}
 
 	data, err := headerExtra.Encode()
@@ -34,13 +31,10 @@ func TestEncodeHeaderExtra(t *testing.T) {
 	newHeaderExtra, err := NewHeaderExtra(data)
 	assert.Nil(t, err)
 	assert.Equal(t, newHeaderExtra.Root.EpochHash, headerExtra.Root.EpochHash)
-	assert.Equal(t, newHeaderExtra.Root.DelegateHash, headerExtra.Root.DelegateHash)
 	assert.Equal(t, newHeaderExtra.Root.CandidateHash, headerExtra.Root.CandidateHash)
-	assert.Equal(t, newHeaderExtra.Root.VoteHash, headerExtra.Root.VoteHash)
 	assert.Equal(t, newHeaderExtra.Root.MintCntHash, headerExtra.Root.MintCntHash)
 
 	assert.Equal(t, newHeaderExtra.CurrentEpochValidators, headerExtra.CurrentEpochValidators)
-	assert.Equal(t, newHeaderExtra.CurrentBlockDelegates, headerExtra.CurrentBlockDelegates)
 	assert.Equal(t, newHeaderExtra.CurrentBlockCandidates, headerExtra.CurrentBlockCandidates)
 }
 
@@ -48,12 +42,7 @@ func TestHeaderExtraEqual(t *testing.T) {
 	var headerExtra HeaderExtra
 	var otherHeaderExtra HeaderExtra
 
-	headerExtra.CurrentBlockDelegates = append(headerExtra.CurrentBlockDelegates, Delegate{
-		Delegator: common.HexToAddress("0xcc7c8317b21e1cea6139700c3c46c21af998d14c"),
-		Candidate: common.HexToAddress("0xcc7c8317b21e1cea6139700c3c46c21af998d14c"),
-	})
 	assert.False(t, headerExtra.Equal(otherHeaderExtra))
-	otherHeaderExtra.CurrentBlockDelegates = append(otherHeaderExtra.CurrentBlockDelegates, headerExtra.CurrentBlockDelegates[0])
 	assert.True(t, headerExtra.Equal(otherHeaderExtra))
 
 	headerExtra.CurrentBlockCandidates = append(headerExtra.CurrentBlockCandidates, common.HexToAddress("0xcc7c8317b21e1cea6139700c3c46c21af998d14c"))
