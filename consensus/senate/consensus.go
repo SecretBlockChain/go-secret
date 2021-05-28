@@ -299,7 +299,7 @@ func (senate *Senate) Prepare(chain consensus.ChainHeaderReader, header *types.H
 		}
 
 		headerExtra.Epoch = 1
-		headerExtra.EpochBlock = header.Time
+		headerExtra.EpochBlock = number
 	} else {
 		parentHeaderExtra, err := decodeHeaderExtra(parent)
 		if err != nil {
