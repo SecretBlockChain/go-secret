@@ -139,7 +139,6 @@ func (senate *Senate) inTurn(config params.SenateConfig,
 	lastBlockHeader *types.Header, nexBlockTime uint64, signer common.Address) bool {
 
 	validators := config.Validators
-	epochTime := config.GenesisTimestamp
 
 	if lastBlockHeader != nil && lastBlockHeader.Number.Int64() > 0 {
 		headerExtra, err := decodeHeaderExtra(lastBlockHeader)
@@ -147,7 +146,6 @@ func (senate *Senate) inTurn(config params.SenateConfig,
 			return false
 		}
 
-		epochTime = headerExtra.EpochTime
 		snap, err := loadSnapshot(senate.db, headerExtra.Root)
 		if err != nil {
 			return false
@@ -169,7 +167,7 @@ func (senate *Senate) inTurn(config params.SenateConfig,
 		return false
 	}
 
-	idx := (nexBlockTime - epochTime) / config.Period % uint64(len(validators))
+	idx := (nexBlockTime - config.GenesisTimestamp) / config.Period % uint64(len(validators))
 	return validators[idx] == signer
 }
 
@@ -209,7 +207,7 @@ func (senate *Senate) tryElect(config params.SenateConfig, state *state.StateDB,
 	snap *Snapshot, headerExtra *HeaderExtra) error {
 
 	// Is come to new epoch?
-	if header.Time != headerExtra.EpochTime {
+	if header.Number.Uint64() != headerExtra.EpochBlock {
 		return nil
 	}
 
@@ -246,7 +244,7 @@ func (senate *Senate) tryElect(config params.SenateConfig, state *state.StateDB,
 			if candidateCount <= safeSize {
 				log.Info("[DPOS] No more candidate can be kick out",
 					"prevEpochID", headerExtra.Epoch-1,
-					"candidateCount", candidateCount, "needKickOutCount", len(needKickOutValidators)-i,"Epoch", config.Epoch,"Period", config.Period)
+					"candidateCount", candidateCount, "needKickOutCount", len(needKickOutValidators)-i, "Epoch", config.Epoch, "Period", config.Period)
 				return nil
 			}
 

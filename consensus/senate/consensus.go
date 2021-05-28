@@ -184,8 +184,8 @@ func (senate *Senate) verifyCascadingFields(chain consensus.ChainHeaderReader, h
 	}
 
 	// Ensure that the epoch timestamp and parent block are continuous
-	if headerExtra.Epoch != parentHeaderExtra.Epoch || headerExtra.EpochTime != parentHeaderExtra.EpochTime {
-		if headerExtra.Epoch != parentHeaderExtra.Epoch+1 || headerExtra.EpochTime != header.Time {
+	if headerExtra.Epoch != parentHeaderExtra.Epoch || headerExtra.EpochBlock != parentHeaderExtra.EpochBlock {
+		if headerExtra.Epoch != parentHeaderExtra.Epoch+1 || headerExtra.EpochBlock != number {
 			return ErrInvalidTimestamp
 		}
 	}
@@ -201,7 +201,7 @@ func (senate *Senate) verifyCascadingFields(chain consensus.ChainHeaderReader, h
 		return err
 	}
 	if root != headerExtra.Root {
-		log.Info(fmt.Sprintf("root \n %s \n headerExtra.Root %s ",Root2String(root),Root2String(headerExtra.Root)))
+		log.Info(fmt.Sprintf("root \n %s \n headerExtra.Root %s ", Root2String(root), Root2String(headerExtra.Root)))
 		return errors.New("invalid trie root")
 	}
 
@@ -219,8 +219,8 @@ func (senate *Senate) verifyCascadingFields(chain consensus.ChainHeaderReader, h
 }
 
 func Root2String(root Root) string {
-	return fmt.Sprintf("CandidateHash=%s \nConfigHash=%s \nDeclareHash=%s \nCandidateHash=%s \nEpochHash=%s \nMintCntHash=%s ",root.CandidateHash.String(),
-		root.ConfigHash.String(),root.DeclareHash.String(),root.CandidateHash.String(),root.EpochHash.String(),root.MintCntHash.String(),)
+	return fmt.Sprintf("CandidateHash=%s \nConfigHash=%s \nDeclareHash=%s \nCandidateHash=%s \nEpochHash=%s \nMintCntHash=%s ", root.CandidateHash.String(),
+		root.ConfigHash.String(), root.DeclareHash.String(), root.CandidateHash.String(), root.EpochHash.String(), root.MintCntHash.String())
 }
 
 // VerifyUncles verifies that the given block's uncles conform to the consensus
@@ -299,7 +299,7 @@ func (senate *Senate) Prepare(chain consensus.ChainHeaderReader, header *types.H
 		}
 
 		headerExtra.Epoch = 1
-		headerExtra.EpochTime = header.Time
+		headerExtra.EpochBlock = header.Time
 	} else {
 		parentHeaderExtra, err := decodeHeaderExtra(parent)
 		if err != nil {
@@ -319,12 +319,10 @@ func (senate *Senate) Prepare(chain consensus.ChainHeaderReader, header *types.H
 
 		headerExtra.Root = parentHeaderExtra.Root
 		headerExtra.Epoch = parentHeaderExtra.Epoch
-		headerExtra.EpochTime = parentHeaderExtra.EpochTime
-		duration := header.Time - parentHeaderExtra.EpochTime
-		log.Info(fmt.Sprintf("duration %d",duration))
-		if duration/config.Epoch >= 1 && duration%config.Epoch > 0 {
+		headerExtra.EpochBlock = parentHeaderExtra.EpochBlock
+		if number-headerExtra.EpochBlock == config.Epoch {
 			headerExtra.Epoch = parentHeaderExtra.Epoch + 1
-			headerExtra.EpochTime = header.Time
+			headerExtra.EpochBlock = number
 		}
 	}
 
@@ -386,9 +384,9 @@ func (senate *Senate) Finalize(chain consensus.ChainHeaderReader, header *types.
 
 	// Replay custom transactions and check HeaderExtra of block header
 	temp := HeaderExtra{
-		Root:      headerExtra.Root,
-		Epoch:     headerExtra.Epoch,
-		EpochTime: headerExtra.EpochTime,
+		Root:       headerExtra.Root,
+		Epoch:      headerExtra.Epoch,
+		EpochBlock: headerExtra.EpochBlock,
 	}
 	senate.processTransactions(config, state, header, snap, &temp, txs, nil)
 	if err = senate.tryElect(config, state, header, snap, &temp); err != nil || !temp.Equal(headerExtra) {
@@ -416,8 +414,8 @@ func (senate *Senate) FinalizeAndAssemble(chain consensus.ChainHeaderReader, hea
 		return nil, err
 	}
 	headerExtra := HeaderExtra{
-		Epoch:     oldHeaderExtra.Epoch,
-		EpochTime: oldHeaderExtra.EpochTime,
+		Epoch:      oldHeaderExtra.Epoch,
+		EpochBlock: oldHeaderExtra.EpochBlock,
 	}
 	parent := chain.GetHeader(header.ParentHash, header.Number.Uint64()-1)
 	if header.Number.Int64() > 1 {

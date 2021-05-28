@@ -5,10 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/SecretBlockChain/go-secret/log"
 	"math/big"
 	"math/rand"
 	"sort"
+
+	"github.com/SecretBlockChain/go-secret/log"
 
 	"github.com/SecretBlockChain/go-secret/common"
 	"github.com/SecretBlockChain/go-secret/core/types"
@@ -19,14 +20,14 @@ import (
 )
 
 var (
-	epochPrefix     = []byte("epoch-")     // epoch-validator:{validators}
+	epochPrefix = []byte("epoch-") // epoch-validator:{validators}
 	//delegatePrefix  = []byte("delegate-")  // delegate-{candidateAddr}..{delegatorAddr}:{delegatorAddr}
 	//votePrefix      = []byte("vote-")      // vote-{delegatorAddr}:{candidateAddr}
 	candidatePrefix = []byte("candidate-") // candidate-{candidateAddr}:
 	mintCntPrefix   = []byte("mintCnt-")   // mintCnt-{epoch}..{validator}:{count}
 	configPrefix    = []byte("config")     // config:{params.SenateConfig}
 	//proposalPrefix  = []byte("proposal-")  // proposal-{hash}:{Proposal}
-	declarePrefix   = []byte("declare-")   // declare-{hash}-{epoch}-{declarer}:{Declare}
+	declarePrefix = []byte("declare-") // declare-{hash}-{epoch}-{declarer}:{Declare}
 )
 
 // SortableAddress sorted by votes.
@@ -140,7 +141,7 @@ func (snap *Snapshot) apply(header *types.Header, headerExtra HeaderExtra) error
 			return err
 		}
 	}
-	if header.Time == headerExtra.EpochTime {
+	if header.Number.Uint64() == headerExtra.EpochBlock {
 		if err := snap.SetValidators(headerExtra.CurrentEpochValidators); err != nil {
 			return err
 		}
@@ -368,14 +369,15 @@ func (snap *Snapshot) EnoughCandidates(n int) (int, bool) {
 	return candidateCount, false
 }
 
-func printLog(candidates SortableAddresses , count int)  {
+func printLog(candidates SortableAddresses, count int) {
 
-	addrS := fmt.Sprintf("\n count %d | \n",count)
-	for _,addr := range candidates {
+	addrS := fmt.Sprintf("\n count %d | \n", count)
+	for _, addr := range candidates {
 		addrS += addr.Address.String() + "\n"
 	}
-	log.Info("rand candidates ",addrS)
+	log.Info("rand candidates ", addrS)
 }
+
 // RandCandidates random return n candidates.
 func (snap *Snapshot) RandCandidates(seed int64, n int) (SortableAddresses, error) {
 	if n <= 0 {
@@ -404,7 +406,7 @@ func (snap *Snapshot) RandCandidates(seed int64, n int) (SortableAddresses, erro
 
 	// Shuffle candidates
 	r := rand.New(rand.NewSource(seed))
-	for i := len(candidates) -1 ; i >0; i-- {
+	for i := len(candidates) - 1; i > 0; i-- {
 		j := int(r.Int31n(int32(i + 1)))
 		candidates[i], candidates[j] = candidates[j], candidates[i]
 	}
@@ -412,7 +414,7 @@ func (snap *Snapshot) RandCandidates(seed int64, n int) (SortableAddresses, erro
 		candidates = candidates[:n]
 	}
 	//TODO test print log
-	printLog(candidates,n)
+	printLog(candidates, n)
 	return candidates, nil
 }
 

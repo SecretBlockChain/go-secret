@@ -25,7 +25,7 @@ type Root struct {
 type HeaderExtra struct {
 	Root                          Root
 	Epoch                         uint64
-	EpochTime                     uint64
+	EpochBlock                    uint64
 	ChainConfig                   []params.SenateConfig
 	CurrentBlockCandidates        []common.Address
 	CurrentBlockKickOutCandidates []common.Address
@@ -84,7 +84,7 @@ func (headerExtra HeaderExtra) Equal(other HeaderExtra) bool {
 	if headerExtra.Epoch != other.Epoch {
 		return false
 	}
-	if headerExtra.EpochTime != other.EpochTime {
+	if headerExtra.EpochBlock != other.EpochBlock {
 		return false
 	}
 
