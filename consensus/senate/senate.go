@@ -280,7 +280,7 @@ func (senate *Senate) accumulateRewards(config params.SenateConfig, state *state
 	number := header.Number.Uint64()
 	for _, reward := range config.Rewards {
 		blockReward = reward.Reward
-		if reward.Height > number {
+		if reward.Height >= number {
 			break
 		}
 	}
