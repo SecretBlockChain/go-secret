@@ -155,37 +155,3 @@ func TestCountMinted(t *testing.T) {
 	assert.Equal(t, result[2].Address, validator3)
 	assert.Equal(t, result[2].Weight, big.NewInt(4))
 }
-
-func TestDeclare(t *testing.T) {
-	db := rawdb.NewMemoryDatabase()
-	snap, err := newSnapshot(db)
-	assert.Nil(t, err)
-
-	err = snap.Declare(1, Declare{
-		Hash:         common.HexToHash("0x90fcc640d56532c8d4f1255a44533b8d097149c67e298fc7baa1d920925e235f"),
-		ProposalHash: common.HexToHash("0xba840f26275463ccefda668ff17efebfb80b3c1ba4836515060ab18023d2e8bd"),
-		Declarer:     common.HexToAddress("0x47746e8acb5dafe9c00b7195d0c2d830fcc04910"),
-		Decision:     false,
-	})
-	assert.Nil(t, err)
-
-	err = snap.Declare(1, Declare{
-		Hash:         common.HexToHash("0x8cb4fde308b98904f63d6b102c093d2e81678ed35db7448f7b454cc99faee2f5"),
-		ProposalHash: common.HexToHash("0xba840f26275463ccefda668ff17efebfb80b3c1ba4836515060ab18023d2e8bd"),
-		Declarer:     common.HexToAddress("0x10702d5b794d97fb720e02506ecfdb1186a804b1"),
-		Decision:     true,
-	})
-	assert.Nil(t, err)
-
-	err = snap.Declare(1, Declare{
-		Hash:         common.HexToHash("0x1db19b1ee54059eff1a1c656bf0e4fb1894a7b150d29865e587143d9138a63c7"),
-		ProposalHash: common.HexToHash("0xba840f26275463ccefda668ff17efebfb80b3c1ba4836515060ab18023d2e8bd"),
-		Declarer:     common.HexToAddress("0xc64bfae75f63a3fb0a33bc3d2e0d125d0d457ddd"),
-		Decision:     true,
-	})
-	assert.Nil(t, err)
-
-	declarations, err := snap.GetDeclarations(common.HexToHash("0xba840f26275463ccefda668ff17efebfb80b3c1ba4836515060ab18023d2e8bd"), 1)
-	assert.Nil(t, err)
-	assert.Equal(t, len(declarations), 3)
-}

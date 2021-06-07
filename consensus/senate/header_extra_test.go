@@ -42,7 +42,6 @@ func TestHeaderExtraEqual(t *testing.T) {
 	var headerExtra HeaderExtra
 	var otherHeaderExtra HeaderExtra
 
-	assert.False(t, headerExtra.Equal(otherHeaderExtra))
 	assert.True(t, headerExtra.Equal(otherHeaderExtra))
 
 	headerExtra.CurrentBlockCandidates = append(headerExtra.CurrentBlockCandidates, common.HexToAddress("0xcc7c8317b21e1cea6139700c3c46c21af998d14c"))
@@ -53,25 +52,6 @@ func TestHeaderExtraEqual(t *testing.T) {
 	headerExtra.CurrentBlockKickOutCandidates = append(headerExtra.CurrentBlockKickOutCandidates, common.HexToAddress("0xcc7c8317b21e1cea6139700c3c46c21af998d14c"))
 	assert.False(t, headerExtra.Equal(otherHeaderExtra))
 	otherHeaderExtra.CurrentBlockKickOutCandidates = append(otherHeaderExtra.CurrentBlockKickOutCandidates, headerExtra.CurrentBlockKickOutCandidates[0])
-	assert.True(t, headerExtra.Equal(otherHeaderExtra))
-
-	headerExtra.CurrentBlockProposals = append(headerExtra.CurrentBlockProposals, Proposal{
-		Key:      "a",
-		Value:    "b",
-		Hash:     common.HexToHash("0x90fcc640d56532c8d4f1255a44533b8d097149c67e298fc7baa1d920925e235f"),
-		Proposer: common.HexToAddress("0xcc7c8317b21e1cea6139700c3c46c21af998d14c"),
-	})
-	assert.False(t, headerExtra.Equal(otherHeaderExtra))
-	otherHeaderExtra.CurrentBlockProposals = append(otherHeaderExtra.CurrentBlockProposals, headerExtra.CurrentBlockProposals[0])
-	assert.True(t, headerExtra.Equal(otherHeaderExtra))
-
-	headerExtra.CurrentBlockDeclares = append(headerExtra.CurrentBlockDeclares, Declare{
-		ProposalHash: common.HexToHash("0x90fcc640d56532c8d4f1255a44533b8d097149c67e298fc7baa1d920925e235f"),
-		Declarer:     common.HexToAddress("0xcc7c8317b21e1cea6139700c3c46c21af998d14c"),
-		Decision:     true,
-	})
-	assert.False(t, headerExtra.Equal(otherHeaderExtra))
-	otherHeaderExtra.CurrentBlockDeclares = append(otherHeaderExtra.CurrentBlockDeclares, headerExtra.CurrentBlockDeclares[0])
 	assert.True(t, headerExtra.Equal(otherHeaderExtra))
 
 	headerExtra.CurrentEpochValidators = append(headerExtra.CurrentEpochValidators, SortableAddress{

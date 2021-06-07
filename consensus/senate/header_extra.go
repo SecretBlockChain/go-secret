@@ -17,7 +17,6 @@ type Root struct {
 	CandidateHash common.Hash
 	MintCntHash   common.Hash
 	ConfigHash    common.Hash
-	DeclareHash   common.Hash
 }
 
 // HeaderExtra is the struct of info in header.Extra[extraVanity:len(header.extra)-extraSeal].
@@ -29,7 +28,6 @@ type HeaderExtra struct {
 	ChainConfig                   []params.SenateConfig
 	CurrentBlockCandidates        []common.Address
 	CurrentBlockKickOutCandidates []common.Address
-	CurrentBlockDeclares          []Declare
 	CurrentEpochValidators        SortableAddresses
 }
 
@@ -111,15 +109,6 @@ func (headerExtra HeaderExtra) Equal(other HeaderExtra) bool {
 	}
 	for idx, candidate := range headerExtra.CurrentBlockKickOutCandidates {
 		if candidate != other.CurrentBlockKickOutCandidates[idx] {
-			return false
-		}
-	}
-
-	if len(headerExtra.CurrentBlockDeclares) != len(other.CurrentBlockDeclares) {
-		return false
-	}
-	for idx, declare := range headerExtra.CurrentBlockDeclares {
-		if declare != other.CurrentBlockDeclares[idx] {
 			return false
 		}
 	}

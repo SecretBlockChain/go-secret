@@ -25,7 +25,6 @@ const (
 
 var (
 	prototypes = []Transaction{
-		new(Declare),
 		new(EventBecomeCandidate),
 	}
 	prototypeMapper = map[TransactionType][]Transaction{}
@@ -80,7 +79,6 @@ func NewTransaction(tx *types.Transaction) (Transaction, error) {
 	return nil, errors.New("undefined custom transaction action")
 }
 
-
 // EventBecomeCandidate apply to become Candidate.
 // data like "senate:1:event:candidate"
 // Sender will become a Candidate
@@ -102,40 +100,5 @@ func (event *EventBecomeCandidate) Decode(tx *types.Transaction, data []byte) er
 		return err
 	}
 	event.Candidate = txSender
-	return nil
-}
-// Declare declare come from custom tx which data like "senate:1:event:declare:hash:yes".
-// proposal only come from the current candidates
-// hash is the hash of proposal tx
-type Declare struct {
-	Hash         common.Hash    `json:"hash"`
-	ProposalHash common.Hash    `json:"proposal_hash"`
-	Declarer     common.Address `json:"declarer"`
-	Decision     bool           `json:"decision"`
-}
-
-func (declare *Declare) Type() TransactionType {
-	return EventTransactionType
-}
-
-func (declare *Declare) Action() string {
-	return "declare"
-}
-
-func (declare *Declare) Decode(tx *types.Transaction, data []byte) error {
-	txSender, err := types.Sender(types.NewEIP155Signer(tx.ChainId()), tx)
-	if err != nil {
-		return err
-	}
-
-	slice := strings.SplitN(string(data), ":", 2)
-	if len(slice) != 2 {
-		return errors.New("invalid declare")
-	}
-
-	declare.Hash = tx.Hash()
-	declare.Declarer = txSender
-	declare.ProposalHash = common.HexToHash(slice[0])
-	declare.Decision = slice[1] == "yes"
 	return nil
 }
