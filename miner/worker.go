@@ -26,8 +26,8 @@ import (
 
 	"github.com/SecretBlockChain/go-secret/common"
 	"github.com/SecretBlockChain/go-secret/consensus"
+	"github.com/SecretBlockChain/go-secret/consensus/equality"
 	"github.com/SecretBlockChain/go-secret/consensus/misc"
-	"github.com/SecretBlockChain/go-secret/consensus/senate"
 	"github.com/SecretBlockChain/go-secret/core"
 	"github.com/SecretBlockChain/go-secret/core/state"
 	"github.com/SecretBlockChain/go-secret/core/types"
@@ -429,10 +429,10 @@ func (w *worker) mainLoop() {
 	defer w.chainHeadSub.Unsubscribe()
 	defer w.chainSideSub.Unsubscribe()
 
-	// Set the delay equal to period if use senate consensus
-	senateDelay := 1 * time.Second
-	if w.chainConfig.Senate != nil && w.chainConfig.Senate.Period > 0 {
-		senateDelay = time.Duration(w.chainConfig.Senate.Period) * time.Second
+	// Set the delay equal to period if use equality consensus
+	equalityDelay := 1 * time.Second
+	if w.chainConfig.Equality != nil && w.chainConfig.Equality.Period > 0 {
+		equalityDelay = time.Duration(w.chainConfig.Equality.Period) * time.Second
 	}
 
 	for {
@@ -517,9 +517,9 @@ func (w *worker) mainLoop() {
 			}
 			atomic.AddInt32(&w.newTxs, int32(len(ev.Txs)))
 
-		case <-time.After(senateDelay):
+		case <-time.After(equalityDelay):
 			// Try to seal block in each period, even no new block received in dpos
-			if w.chainConfig.Senate != nil && w.chainConfig.Senate.Period > 0 {
+			if w.chainConfig.Equality != nil && w.chainConfig.Equality.Period > 0 {
 				w.commitNewWork(nil, false, time.Now().Unix())
 			}
 
@@ -917,7 +917,7 @@ func (w *worker) commitNewWork(interrupt *int32, noempty bool, timestamp int64) 
 		return
 	}
 
-	engine, ok := w.engine.(*senate.Senate)
+	engine, ok := w.engine.(*equality.Equality)
 	if ok && !engine.InTurn(parent.Header(), uint64(tstart.Unix())) {
 		w.updateSnapshot()
 		return

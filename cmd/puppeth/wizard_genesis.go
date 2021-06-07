@@ -57,10 +57,10 @@ func (w *wizard) makeGenesis() {
 	}
 	// Figure out which consensus engine to choose
 	fmt.Println()
-	fmt.Println("Which consensus engine to use? (default = clique)")
+	fmt.Println("Which consensus engine to use? (default = equality)")
 	fmt.Println(" 1. Ethash - proof-of-work")
 	fmt.Println(" 2. Clique - proof-of-authority")
-	fmt.Println(" 3. Senate - delegated-proof-of-stake")
+	fmt.Println(" 3. Equality - proof-of-equality")
 
 	choice := w.read()
 	switch {
@@ -110,40 +110,31 @@ func (w *wizard) makeGenesis() {
 	case choice == "" || choice == "3":
 		// In the case of alien, configure the consensus parameters
 		genesis.Difficulty = big.NewInt(1)
-		genesis.Config.Senate = &params.SenateConfig{
-			Period:              3,
-			Epoch:               201600,
-			MaxValidatorsCount:  21,
-			MinDelegatorBalance: big.NewInt(0),
-			MinCandidateBalance: big.NewInt(0),
-			GenesisTimestamp:    uint64(time.Now().Unix()),
-			Validators:          []common.Address{},
-		}
+		genesis.Config.Equality = params.DefaultEqualityConfig()
 		fmt.Println()
-		fmt.Println("How many seconds should blocks take? (default = 3)")
-		genesis.Config.Senate.Period = uint64(w.readDefaultInt(3))
+		fmt.Println("How many seconds should blocks take? (default = 5)")
+		genesis.Config.Equality.Period = uint64(w.readDefaultInt(5))
 
 		fmt.Println()
-		fmt.Println("How many blocks create for one epoch? (default = 201600)")
-		genesis.Config.Senate.Epoch = uint64(w.readDefaultInt(201600))
+		fmt.Println("How many blocks create for one epoch? (default = 17280)")
+		genesis.Config.Equality.Epoch = uint64(w.readDefaultInt(17280))
+
+		fmt.Println()
+		fmt.Println("What is the deposit pool address? (default = 0x0000000000000000000000000000000000000000)")
+		genesis.Config.Equality.Pool = w.readDefaultAddress(common.Address{})
 
 		fmt.Println()
 		fmt.Println("What is the max number of validators? (default = 21)")
-		genesis.Config.Senate.MaxValidatorsCount = uint64(w.readDefaultInt(21))
+		genesis.Config.Equality.MaxValidatorsCount = uint64(w.readDefaultInt(21))
 
 		fmt.Println()
-		fmt.Println("What is the minimize balance for valid delegator ? (default = 0)")
-		genesis.Config.Senate.MinDelegatorBalance = new(big.Int).Mul(big.NewInt(int64(w.readDefaultInt(0))),
+		fmt.Println("What is the minimize balance of become candidate ? (default = 100)")
+		genesis.Config.Equality.MinCandidateBalance = new(big.Int).Mul(big.NewInt(int64(w.readDefaultInt(0))),
 			big.NewInt(1e+18))
 
 		fmt.Println()
-		fmt.Println("What is the minimize balance of become candidate ? (default = 0)")
-		genesis.Config.Senate.MinCandidateBalance = new(big.Int).Mul(big.NewInt(int64(w.readDefaultInt(0))),
-			big.NewInt(1e+18))
-
-		fmt.Println()
-		fmt.Println("How many minutes delay to create first block ? (default = 0)")
-		genesis.Config.Senate.GenesisTimestamp = uint64(time.Now().Unix()) + uint64(w.readDefaultInt(0)*60)
+		fmt.Println("How many minutes delay to create first block ? (default = 1)")
+		genesis.Config.Equality.GenesisTimestamp = uint64(time.Now().Unix()) + uint64(w.readDefaultInt(1)*60)
 
 		// We also need the initial list of signers
 		fmt.Println()
@@ -151,13 +142,13 @@ func (w *wizard) makeGenesis() {
 		for {
 			if address := w.readAddress(); address != nil {
 
-				genesis.Config.Senate.Validators = append(genesis.Config.Senate.Validators, *address)
+				genesis.Config.Equality.Validators = append(genesis.Config.Equality.Validators, *address)
 				genesis.Alloc[*address] = core.GenesisAccount{
 					Balance: new(big.Int).Lsh(big.NewInt(1), 256-7), // 2^256 / 128 (allow many pre-funds without balance overflows)
 				}
 				continue
 			}
-			if len(genesis.Config.Senate.Validators) > 0 {
+			if len(genesis.Config.Equality.Validators) > 0 {
 				break
 			}
 		}

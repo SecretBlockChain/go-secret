@@ -1,4 +1,4 @@
-package senate
+package equality
 
 import (
 	"bytes"
@@ -25,10 +25,10 @@ type HeaderExtra struct {
 	Root                          Root
 	Epoch                         uint64
 	EpochBlock                    uint64
-	ChainConfig                   []params.SenateConfig
 	CurrentBlockCandidates        []common.Address
 	CurrentBlockKickOutCandidates []common.Address
 	CurrentEpochValidators        SortableAddresses
+	ChainConfig                   []params.EqualityConfig
 }
 
 // NewHeaderExtra new HeaderExtra from rlp bytes.

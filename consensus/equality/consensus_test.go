@@ -1,4 +1,4 @@
-package senate
+package equality
 
 import (
 	"testing"
@@ -17,7 +17,7 @@ func TestSealHash(t *testing.T) {
 	signFn := func(account accounts.Account, s string, data []byte) ([]byte, error) {
 		return crypto.Sign(crypto.Keccak256(data), testUserKey)
 	}
-	sigHash, err := signFn(accounts.Account{Address: testUserAddress}, accounts.MimetypeClique, SenateRLP(&header))
+	sigHash, err := signFn(accounts.Account{Address: testUserAddress}, accounts.MimetypeClique, EqualityRLP(&header))
 	assert.Nil(t, err)
 	copy(header.Extra, sigHash)
 

@@ -1,4 +1,4 @@
-package senate
+package equality
 
 import (
 	"math/big"
@@ -18,22 +18,21 @@ var (
 	testUserAddress = crypto.PubkeyToAddress(testUserKey.PublicKey)
 )
 
-func TestNewSenate(t *testing.T) {
+func TestNewEquality(t *testing.T) {
 	db := rawdb.NewMemoryDatabase()
-	config := params.SenateConfig{
+	config := params.EqualityConfig{
 		Period:              60,
 		Epoch:               180,
 		MaxValidatorsCount:  3,
-		MinDelegatorBalance: big.NewInt(0),
 		MinCandidateBalance: big.NewInt(0),
 		GenesisTimestamp:    uint64(time.Now().Unix()),
 		Validators:          []common.Address{testUserAddress},
-		Rewards: []params.SenateReward{
-			{Height: 100000, Reward: big.NewInt(1)},
+		Rewards: []params.EqualityReward{
+			{Number: 100000, Reward: big.NewInt(1)},
 		},
 	}
-	senate := New(&config, db)
-	senate.Authorize(testUserAddress, func(account accounts.Account, s string, data []byte) ([]byte, error) {
+	equality := New(&config, db)
+	equality.Authorize(testUserAddress, func(account accounts.Account, s string, data []byte) ([]byte, error) {
 		return crypto.Sign(crypto.Keccak256(data), testUserKey)
 	})
 }

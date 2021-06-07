@@ -326,9 +326,9 @@ type ChainConfig struct {
 	EWASMBlock  *big.Int `json:"ewasmBlock,omitempty"`  // EWASM switch block (nil = no fork, 0 = already activated)
 
 	// Various consensus engines
-	Ethash *EthashConfig `json:"ethash,omitempty"`
-	Clique *CliqueConfig `json:"clique,omitempty"`
-	Senate *SenateConfig `json:"senate,omitempty"`
+	Ethash   *EthashConfig   `json:"ethash,omitempty"`
+	Clique   *CliqueConfig   `json:"clique,omitempty"`
+	Equality *EqualityConfig `json:"equality,omitempty"`
 }
 
 // EthashConfig is the consensus engine configs for proof-of-work based sealing.
@@ -350,65 +350,71 @@ func (c *CliqueConfig) String() string {
 	return "clique"
 }
 
-// SenateReward is reward rule of mint block.
-type SenateReward struct {
-	Height uint64   `json:"height"` // Block height
-	Reward *big.Int `json:"reward"` // Reward of mint block
+// EqualityReward is reward rule of mint block.
+type EqualityReward struct {
+	Number uint64   `json:"number"` // Block number
+	Reward *big.Int `json:"reward"` // Token reward of mint block
 }
 
-type SenateRewards []SenateReward
+type EqualityRewards []EqualityReward
 
-func (p SenateRewards) Len() int           { return len(p) }
-func (p SenateRewards) Less(i, j int) bool { return p[i].Height < p[j].Height }
-func (p SenateRewards) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
+func (p EqualityRewards) Len() int           { return len(p) }
+func (p EqualityRewards) Less(i, j int) bool { return p[i].Number < p[j].Number }
+func (p EqualityRewards) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 
 // Sort is a convenience method.
-func (p SenateRewards) Sort() { sort.Sort(p) }
+func (p EqualityRewards) Sort() { sort.Sort(p) }
 
-// SenateConfig is the consensus engine configs for delegated-proof-of-stake based sealing.
-type SenateConfig struct {
+// EqualityConfig is the consensus engine configs for proof-of-equality based sealing.
+type EqualityConfig struct {
 	Period              uint64           `json:"period"`              // Number of seconds between blocks to enforce
 	Epoch               uint64           `json:"epoch"`               // Epoch length to reset votes and checkpoint
 	MaxValidatorsCount  uint64           `json:"maxValidatorsCount"`  // Max count of validators
-	MinDelegatorBalance *big.Int         `json:"minDelegatorBalance"` // Min delegator balance to valid this delegate
 	MinCandidateBalance *big.Int         `json:"minCandidateBalance"` // Min candidate balance to valid this candidate
 	GenesisTimestamp    uint64           `json:"genesisTimestamp"`    // The timestamp of first Block
 	Validators          []common.Address `json:"validators"`          // Genesis validator list
-	Rewards             SenateRewards    `json:"rewards"`             // Reward rule of mint block
+	Pool                common.Address   `json:"pool"`                // Deposit pool address
+	Rewards             EqualityRewards  `json:"rewards"`             // Reward rule of mint block
 }
 
-// DefaultSenateConfig returns default config of senate consensus engine.
-func DefaultSenateConfig() SenateConfig {
-	return SenateConfig{
-		Period:              8,
-		Epoch:               86400,
+// DefaultEqualityConfig returns default config of equality consensus engine.
+func DefaultEqualityConfig() *EqualityConfig {
+	return &EqualityConfig{
+		Period:              5,
+		Epoch:               17280,
 		MaxValidatorsCount:  21,
-		MinDelegatorBalance: big.NewInt(1),
 		MinCandidateBalance: big.NewInt(100),
 		GenesisTimestamp:    uint64(time.Now().Add(time.Minute * 1).Unix()),
-		Rewards: SenateRewards{
-			{Height: 9999999999, Reward: big.NewInt(5)},
+		Rewards: []EqualityReward{
+			{
+				Number: 45000000,
+				Reward: big.NewInt(2000000000000000000),
+			},
+			{
+				Number: 45000001,
+				Reward: big.NewInt(0),
+			},
 		},
 	}
 }
 
 // String implements the stringer interface, returning the consensus engine details.
-func (c *SenateConfig) String() string {
-	return "senate"
+func (c *EqualityConfig) String() string {
+	return "equality"
 }
 
-// Equal compares two SenateConfigs for equality.
-func (c *SenateConfig) Equal(other SenateConfig) bool {
-	if c.Period != other.Period {
+// Equal compares two EqualityConfigs for equal.
+func (c *EqualityConfig) Equal(other EqualityConfig) bool {
+	if c.Pool != other.Pool {
 		return false
 	}
 	if c.Epoch != other.Epoch {
 		return false
 	}
-	if c.MaxValidatorsCount != other.MaxValidatorsCount {
+	if c.Period != other.Period {
 		return false
 	}
-	if c.MinDelegatorBalance.Cmp(other.MinDelegatorBalance) != 0 {
+	if c.MaxValidatorsCount != other.MaxValidatorsCount {
 		return false
 	}
 	if c.MinCandidateBalance.Cmp(other.MinCandidateBalance) != 0 {
@@ -431,7 +437,7 @@ func (c *SenateConfig) Equal(other SenateConfig) bool {
 		return false
 	}
 	for idx, reward := range c.Rewards {
-		if reward.Height != other.Rewards[idx].Height {
+		if reward.Number != other.Rewards[idx].Number {
 			return false
 		}
 		if reward.Reward.Cmp(other.Rewards[idx].Reward) != 0 {

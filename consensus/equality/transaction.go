@@ -1,4 +1,4 @@
-package senate
+package equality
 
 import (
 	"errors"
@@ -38,7 +38,7 @@ func init() {
 }
 
 // NewTransaction new custom transaction from transaction data.
-// data format: senate:version:type:action:data
+// data format: equality:version:type:action:data
 func NewTransaction(tx *types.Transaction) (Transaction, error) {
 	slice := strings.Split(string(tx.Data()), ":")
 	if len(slice) < 4 {
@@ -46,7 +46,7 @@ func NewTransaction(tx *types.Transaction) (Transaction, error) {
 	}
 
 	prefix, version, txType, action := slice[0], slice[1], TransactionType(slice[2]), slice[3]
-	if prefix != "senate" {
+	if prefix != "equality" {
 		return nil, errors.New("invalid custom transaction prefix")
 	}
 	if version != "1" {
@@ -80,7 +80,7 @@ func NewTransaction(tx *types.Transaction) (Transaction, error) {
 }
 
 // EventBecomeCandidate apply to become Candidate.
-// data like "senate:1:event:candidate"
+// data like "equality:1:event:candidate"
 // Sender will become a Candidate
 type EventBecomeCandidate struct {
 	Candidate common.Address

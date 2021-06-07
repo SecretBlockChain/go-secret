@@ -1,4 +1,4 @@
-package senate
+package equality
 
 import (
 	"bytes"
@@ -50,7 +50,7 @@ func (t *Trie) PrefixIterator(prefix []byte) trie.NodeIterator {
 func (t *Trie) Get(key []byte) []byte {
 	res, err := t.TryGet(key)
 	if err != nil {
-		log.Error(fmt.Sprintf("[DPOS] Unhandled trie error: %v", err))
+		log.Error(fmt.Sprintf("[equality] Unhandled trie error: %v", err))
 	}
 	return res
 }
@@ -73,7 +73,7 @@ func (t *Trie) TryGet(key []byte) ([]byte, error) {
 // stored in the trie.
 func (t *Trie) Update(key, value []byte) {
 	if err := t.TryUpdate(key, value); err != nil {
-		log.Error(fmt.Sprintf("[DPOS] Unhandled trie error: %v", err))
+		log.Error(fmt.Sprintf("[equality] Unhandled trie error: %v", err))
 	}
 }
 
@@ -95,7 +95,7 @@ func (t *Trie) TryUpdate(key, value []byte) error {
 // Delete removes any existing value for key from the trie.
 func (t *Trie) Delete(key []byte) {
 	if err := t.TryDelete(key); err != nil {
-		log.Error(fmt.Sprintf("[DPOS] Unhandled trie error: %v", err))
+		log.Error(fmt.Sprintf("[equality] Unhandled trie error: %v", err))
 	}
 }
 

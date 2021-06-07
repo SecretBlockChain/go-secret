@@ -30,8 +30,8 @@ import (
 	"github.com/SecretBlockChain/go-secret/common/hexutil"
 	"github.com/SecretBlockChain/go-secret/consensus"
 	"github.com/SecretBlockChain/go-secret/consensus/clique"
+	"github.com/SecretBlockChain/go-secret/consensus/equality"
 	"github.com/SecretBlockChain/go-secret/consensus/ethash"
-	"github.com/SecretBlockChain/go-secret/consensus/senate"
 	"github.com/SecretBlockChain/go-secret/core"
 	"github.com/SecretBlockChain/go-secret/core/bloombits"
 	"github.com/SecretBlockChain/go-secret/core/rawdb"
@@ -245,8 +245,8 @@ func CreateConsensusEngine(stack *node.Node, chainConfig *params.ChainConfig, co
 	// If proof-of-authority is requested, set it up
 	if chainConfig.Clique != nil {
 		return clique.New(chainConfig.Clique, db)
-	} else if chainConfig.Senate != nil {
-		return senate.New(chainConfig.Senate, db)
+	} else if chainConfig.Equality != nil {
+		return equality.New(chainConfig.Equality, db)
 	}
 	// Otherwise assume proof-of-work
 	switch config.PowMode {
@@ -459,13 +459,13 @@ func (s *Ethereum) StartMining(threads int) error {
 			}
 			clique.Authorize(eb, wallet.SignData)
 		}
-		if senate, ok := s.engine.(*senate.Senate); ok {
+		if equality, ok := s.engine.(*equality.Equality); ok {
 			wallet, err := s.accountManager.Find(accounts.Account{Address: eb})
 			if wallet == nil || err != nil {
 				log.Error("Etherbase account unavailable locally", "err", err)
 				return fmt.Errorf("signer missing: %v", err)
 			}
-			senate.Authorize(eb, wallet.SignData)
+			equality.Authorize(eb, wallet.SignData)
 		}
 		// If mining is started, we can disable the transaction rejection mechanism
 		// introduced to speed sync times.

@@ -1,4 +1,4 @@
-package senate
+package equality
 
 import (
 	"bytes"

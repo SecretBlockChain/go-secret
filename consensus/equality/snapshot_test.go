@@ -1,4 +1,4 @@
-package senate
+package equality
 
 import (
 	"math/big"
@@ -16,7 +16,7 @@ func TestSetChainConfig(t *testing.T) {
 	snap, err := loadSnapshot(db, Root{})
 	assert.Nil(t, err)
 
-	config := params.SenateConfig{
+	config := params.EqualityConfig{
 		Period:             1024,
 		MaxValidatorsCount: 21,
 	}

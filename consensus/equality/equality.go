@@ -1,4 +1,4 @@
-package senate
+package equality
 
 import (
 	"encoding/binary"
@@ -21,7 +21,7 @@ import (
 	lru "github.com/hashicorp/golang-lru"
 )
 
-// Senate delegated-proof-of-stake protocol constants.
+// Equality proof-of-equality protocol constants.
 var (
 	extraVanity        = 32                       // Fixed number of extra-data prefix bytes reserved for signer vanity
 	extraSeal          = crypto.SignatureLength   // Fixed number of extra-data suffix bytes reserved for signer seal
@@ -70,52 +70,52 @@ var (
 
 type SignerFn func(accounts.Account, string, []byte) ([]byte, error)
 
-// Senate is the delegated-proof-of-stake consensus engine.
-type Senate struct {
-	db         ethdb.Database       // Database to store and retrieve snapshot checkpoints
-	signatures *lru.ARCCache        // Signatures of recent blocks to speed up mining
-	config     *params.SenateConfig // Consensus engine configuration parameters
-	signer     common.Address       // Ethereum address of the signing key
-	signFn     SignerFn             // Signer function to authorize hashes with
-	lock       sync.RWMutex         // Protects the signer fields
+// Equality is the proof-of-equality consensus engine.
+type Equality struct {
+	db         ethdb.Database         // Database to store and retrieve snapshot checkpoints
+	signatures *lru.ARCCache          // Signatures of recent blocks to speed up mining
+	config     *params.EqualityConfig // Consensus engine configuration parameters
+	signer     common.Address         // Ethereum address of the signing key
+	signFn     SignerFn               // Signer function to authorize hashes with
+	lock       sync.RWMutex           // Protects the signer fields
 }
 
-// New creates a Senate delegated-proof-of-stake consensus engine with the initial
+// New creates a Equality proof-of-equality consensus engine with the initial
 // signers set to the ones provided by the user.
-func New(config *params.SenateConfig, db ethdb.Database) *Senate {
+func New(config *params.EqualityConfig, db ethdb.Database) *Equality {
 	config.Rewards.Sort()
 	signatures, _ := lru.NewARC(inMemorySignatures)
-	return &Senate{db: db, signatures: signatures, config: config}
+	return &Equality{db: db, signatures: signatures, config: config}
 }
 
 // Close terminates any background threads maintained by the consensus engine.
-func (senate *Senate) Close() error {
+func (e *Equality) Close() error {
 	return nil
 }
 
 // APIs returns the RPC APIs this consensus engine provides.
-func (senate *Senate) APIs(chain consensus.ChainHeaderReader) []rpc.API {
+func (e *Equality) APIs(chain consensus.ChainHeaderReader) []rpc.API {
 	return []rpc.API{{
 		Namespace: "dpos",
 		Version:   "1.0",
-		Service:   &API{chain: chain, senate: senate},
+		Service:   &API{chain: chain, equality: e},
 		Public:    true,
 	}}
 }
 
 // Authorize injects a private key into the consensus engine to mint new blocks
 // with.
-func (senate *Senate) Authorize(signer common.Address, signFn SignerFn) {
-	senate.lock.Lock()
-	defer senate.lock.Unlock()
+func (e *Equality) Authorize(signer common.Address, signFn SignerFn) {
+	e.lock.Lock()
+	defer e.lock.Unlock()
 
-	senate.signer = signer
-	senate.signFn = signFn
+	e.signer = signer
+	e.signFn = signFn
 }
 
 // InTurn returns if a signer at a given block height is in-turn or not.
-func (senate *Senate) InTurn(lastBlockHeader *types.Header, now uint64) bool {
-	config, err := senate.chainConfig(lastBlockHeader)
+func (e *Equality) InTurn(lastBlockHeader *types.Header, now uint64) bool {
+	config, err := e.chainConfig(lastBlockHeader)
 	if err != nil {
 		return false
 	}
@@ -129,13 +129,13 @@ func (senate *Senate) InTurn(lastBlockHeader *types.Header, now uint64) bool {
 		nexBlockTime = uint64(time.Now().Unix())
 	}
 
-	senate.lock.Lock()
-	signer := senate.signer
-	senate.lock.Unlock()
-	return senate.inTurn(config, lastBlockHeader, nexBlockTime, signer)
+	e.lock.Lock()
+	signer := e.signer
+	e.lock.Unlock()
+	return e.inTurn(config, lastBlockHeader, nexBlockTime, signer)
 }
 
-func (senate *Senate) inTurn(config params.SenateConfig,
+func (e *Equality) inTurn(config params.EqualityConfig,
 	lastBlockHeader *types.Header, nexBlockTime uint64, signer common.Address) bool {
 
 	validators := config.Validators
@@ -146,7 +146,7 @@ func (senate *Senate) inTurn(config params.SenateConfig,
 			return false
 		}
 
-		snap, err := loadSnapshot(senate.db, headerExtra.Root)
+		snap, err := loadSnapshot(e.db, headerExtra.Root)
 		if err != nil {
 			return false
 		}
@@ -171,39 +171,39 @@ func (senate *Senate) inTurn(config params.SenateConfig,
 	return validators[idx] == signer
 }
 
-// Gets the chain config for the specified block height.
-func (senate *Senate) chainConfig(header *types.Header) (params.SenateConfig, error) {
+// Gets the chain config for the specified block number.
+func (e *Equality) chainConfig(header *types.Header) (params.EqualityConfig, error) {
 	if header == nil || header.Number.Int64() == 0 {
-		return *senate.config, nil
+		return *e.config, nil
 	}
 
 	headerExtra, err := decodeHeaderExtra(header)
 	if err != nil {
-		return params.SenateConfig{}, err
+		return params.EqualityConfig{}, err
 	}
-	return senate.chainConfigByHash(headerExtra.Root.ConfigHash)
+	return e.chainConfigByHash(headerExtra.Root.ConfigHash)
 }
 
 // Gets the chain config by tire node hash value.
-func (senate *Senate) chainConfigByHash(configHash common.Hash) (params.SenateConfig, error) {
+func (e *Equality) chainConfigByHash(configHash common.Hash) (params.EqualityConfig, error) {
 	zero := common.Hash{}
 	if configHash == zero {
-		return *senate.config, nil
+		return *e.config, nil
 	}
 
 	snap := Snapshot{
-		db:   trie.NewDatabase(senate.db),
+		db:   trie.NewDatabase(e.db),
 		root: Root{ConfigHash: configHash},
 	}
 	config, err := snap.GetChainConfig()
 	if err != nil {
-		return params.SenateConfig{}, ErrChainConfigMissing
+		return params.EqualityConfig{}, ErrChainConfigMissing
 	}
 	return config, nil
 }
 
 // Elect validators in first block for epoch.
-func (senate *Senate) tryElect(config params.SenateConfig, state *state.StateDB, header *types.Header,
+func (e *Equality) tryElect(config params.EqualityConfig, state *state.StateDB, header *types.Header,
 	snap *Snapshot, headerExtra *HeaderExtra) error {
 
 	// Is come to new epoch?
@@ -242,7 +242,7 @@ func (senate *Senate) tryElect(config params.SenateConfig, state *state.StateDB,
 		for i, validator := range needKickOutValidators {
 			// Ensure candidate count greater than or equal to safeSize
 			if candidateCount <= safeSize {
-				log.Info("[DPOS] No more candidate can be kick out",
+				log.Info("[equality] No more candidate can be kick out",
 					"prevEpochID", headerExtra.Epoch-1,
 					"candidateCount", candidateCount, "needKickOutCount", len(needKickOutValidators)-i, "Epoch", config.Epoch, "Period", config.Period)
 				return nil
@@ -255,13 +255,10 @@ func (senate *Senate) tryElect(config params.SenateConfig, state *state.StateDB,
 			// If kick out success, candidateCount minus 1
 			candidateCount--
 			headerExtra.CurrentBlockKickOutCandidates = append(headerExtra.CurrentBlockKickOutCandidates, validator.Address)
-			log.Info("[DPOS] Kick out candidate",
+			log.Info("[equality] Kick out candidate",
 				"prevEpochID", headerExtra.Epoch-1, "candidate", validator, "mintCnt", validator.Weight.String())
 		}
 	}
-
-	// Elect next epoch validators by votes
-	//candidates, err := snap.TopCandidates(state, int(config.MaxValidatorsCount))
 
 	// Shuffle candidates
 	seed := int64(binary.LittleEndian.Uint32(crypto.Keccak512(header.ParentHash.Bytes())))
@@ -275,12 +272,12 @@ func (senate *Senate) tryElect(config params.SenateConfig, state *state.StateDB,
 }
 
 // Credits the coinbase of the given block with the mining reward.
-func (senate *Senate) accumulateRewards(config params.SenateConfig, state *state.StateDB, header *types.Header) {
+func (e *Equality) accumulateRewards(config params.EqualityConfig, state *state.StateDB, header *types.Header) {
 	var blockReward *big.Int
 	number := header.Number.Uint64()
 	for _, reward := range config.Rewards {
 		blockReward = reward.Reward
-		if reward.Height >= number {
+		if reward.Number >= number {
 			break
 		}
 	}
@@ -290,18 +287,18 @@ func (senate *Senate) accumulateRewards(config params.SenateConfig, state *state
 	}
 	reward := new(big.Int).Set(blockReward)
 	state.AddBalance(header.Coinbase, reward)
-	log.Info("[DPOS] Accumulate rewards", "address", header.Coinbase, "amount", reward)
+	log.Info("[equality] Accumulate rewards", "address", header.Coinbase, "amount", reward)
 }
 
 // Process custom transactions, write into header.Extra.
-func (senate *Senate) processTransactions(config params.SenateConfig, state *state.StateDB, header *types.Header,
+func (e *Equality) processTransactions(config params.EqualityConfig, state *state.StateDB, header *types.Header,
 	snap *Snapshot, headerExtra *HeaderExtra, txs []*types.Transaction, receipts []*types.Receipt) {
 
 	if header.Number.Int64() <= 1 {
 		if err := snap.SetChainConfig(config); err != nil {
 			panic(err)
 		}
-		headerExtra.ChainConfig = []params.SenateConfig{config}
+		headerExtra.ChainConfig = []params.EqualityConfig{config}
 	}
 
 	count := 0
@@ -329,5 +326,5 @@ func (senate *Senate) processTransactions(config params.SenateConfig, state *sta
 
 	headerExtra.CurrentBlockCandidates = addressesDistinct(headerExtra.CurrentBlockCandidates)
 
-	log.Trace("[DPOS] Processing transactions done", "txs", count)
+	log.Trace("[equality] Processing transactions done", "txs", count)
 }

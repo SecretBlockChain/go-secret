@@ -1,4 +1,4 @@
-package senate
+package equality
 
 import (
 	"encoding/binary"
@@ -21,7 +21,7 @@ var (
 	epochPrefix     = []byte("epoch-")     // epoch-validator:{validators}
 	candidatePrefix = []byte("candidate-") // candidate-{candidateAddr}:
 	mintCntPrefix   = []byte("mintCnt-")   // mintCnt-{epoch}..{validator}:{count}
-	configPrefix    = []byte("config")     // config:{params.SenateConfig}
+	configPrefix    = []byte("config")     // config:{params.EqualityConfig}
 )
 
 // SortableAddress sorted by votes.
@@ -197,23 +197,23 @@ func (snap *Snapshot) Commit(root Root) error {
 }
 
 // GetChainConfig returns chain config from snapshot.
-func (snap *Snapshot) GetChainConfig() (params.SenateConfig, error) {
+func (snap *Snapshot) GetChainConfig() (params.EqualityConfig, error) {
 	configTrie, err := snap.ensureTrie(configPrefix)
 	if err != nil {
-		return params.SenateConfig{}, err
+		return params.EqualityConfig{}, err
 	}
 
 	key := []byte("config")
 	data := configTrie.Get(key)
-	var config params.SenateConfig
+	var config params.EqualityConfig
 	if err := json.Unmarshal(data, &config); err != nil {
-		return params.SenateConfig{}, err
+		return params.EqualityConfig{}, err
 	}
 	return config, nil
 }
 
 // SetChainConfig write chain config to snapshot.
-func (snap *Snapshot) SetChainConfig(config params.SenateConfig) error {
+func (snap *Snapshot) SetChainConfig(config params.EqualityConfig) error {
 	if len(config.Rewards) == 0 {
 		config.Rewards = nil
 	}

@@ -1,4 +1,4 @@
-package senate
+package equality
 
 import (
 	"sort"
@@ -9,10 +9,10 @@ import (
 )
 
 // API is a user facing RPC API to allow controlling the signer and voting
-// mechanisms of the delegated-proof-of-stake scheme.
+// mechanisms of the proof-of-equality scheme.
 type API struct {
-	chain  consensus.ChainHeaderReader
-	senate *Senate
+	chain    consensus.ChainHeaderReader
+	equality *Equality
 }
 
 // GetValidators retrieves the list of the validators at specified block
@@ -32,7 +32,7 @@ func (api *API) GetValidators(number *rpc.BlockNumber) (SortableAddresses, error
 		return nil, err
 	}
 
-	snap, err := loadSnapshot(api.senate.db, headerExtra.Root)
+	snap, err := loadSnapshot(api.equality.db, headerExtra.Root)
 	if err != nil {
 		return nil, err
 	}
