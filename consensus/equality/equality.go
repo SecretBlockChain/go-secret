@@ -244,7 +244,7 @@ func (e *Equality) tryElect(config params.EqualityConfig, state *state.StateDB, 
 			if candidateCount <= safeSize {
 				log.Info("[equality] No more candidate can be kick out",
 					"prevEpochID", headerExtra.Epoch-1,
-					"candidateCount", candidateCount, "needKickOutCount", len(needKickOutValidators)-i, "Epoch", config.Epoch, "Period", config.Period)
+					"candidateCount", candidateCount, "needKickOutCount", len(needKickOutValidators)-i)
 				return nil
 			}
 
@@ -285,8 +285,12 @@ func (e *Equality) accumulateRewards(config params.EqualityConfig, state *state.
 	if blockReward == nil || blockReward.Cmp(big.NewInt(0)) <= 0 {
 		return
 	}
+
 	reward := new(big.Int).Set(blockReward)
-	state.AddBalance(header.Coinbase, reward)
+	base := reward.Div(reward, big.NewInt(10))
+	state.AddBalance(header.Coinbase, base)
+	state.AddBalance(config.Pool, reward.Sub(reward, base))
+
 	log.Info("[equality] Accumulate rewards", "address", header.Coinbase, "amount", reward)
 }
 
