@@ -3,7 +3,6 @@ package senate
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"io"
 	"math/big"
 	"time"
@@ -201,7 +200,6 @@ func (senate *Senate) verifyCascadingFields(chain consensus.ChainHeaderReader, h
 		return err
 	}
 	if root != headerExtra.Root {
-		log.Info(fmt.Sprintf("root \n %s \n headerExtra.Root %s ", Root2String(root), Root2String(headerExtra.Root)))
 		return errors.New("invalid trie root")
 	}
 
@@ -216,11 +214,6 @@ func (senate *Senate) verifyCascadingFields(chain consensus.ChainHeaderReader, h
 		return errors.New("failed to write snapshot")
 	}
 	return nil
-}
-
-func Root2String(root Root) string {
-	return fmt.Sprintf("CandidateHash=%s \nConfigHash=%s \nDeclareHash=%s \nCandidateHash=%s \nEpochHash=%s \nMintCntHash=%s ", root.CandidateHash.String(),
-		root.ConfigHash.String(), root.DeclareHash.String(), root.CandidateHash.String(), root.EpochHash.String(), root.MintCntHash.String())
 }
 
 // VerifyUncles verifies that the given block's uncles conform to the consensus
@@ -473,7 +466,6 @@ func (senate *Senate) FinalizeAndAssemble(chain consensus.ChainHeaderReader, hea
 
 	header.Root = state.IntermediateRoot(chain.Config().IsEIP158(header.Number))
 	header.UncleHash = types.CalcUncleHash(nil)
-	log.Info("header.Root " + header.Root.String())
 	return types.NewBlock(header, txs, nil, receipts, new(trie.Trie)), nil
 }
 

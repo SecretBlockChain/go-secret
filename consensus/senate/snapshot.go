@@ -9,8 +9,6 @@ import (
 	"math/rand"
 	"sort"
 
-	"github.com/SecretBlockChain/go-secret/log"
-
 	"github.com/SecretBlockChain/go-secret/common"
 	"github.com/SecretBlockChain/go-secret/core/types"
 	"github.com/SecretBlockChain/go-secret/ethdb"
@@ -369,15 +367,6 @@ func (snap *Snapshot) EnoughCandidates(n int) (int, bool) {
 	return candidateCount, false
 }
 
-func printLog(candidates SortableAddresses, count int) {
-
-	addrS := fmt.Sprintf("\n count %d | \n", count)
-	for _, addr := range candidates {
-		addrS += addr.Address.String() + "\n"
-	}
-	log.Info("rand candidates ", addrS)
-}
-
 // RandCandidates random return n candidates.
 func (snap *Snapshot) RandCandidates(seed int64, n int) (SortableAddresses, error) {
 	if n <= 0 {
@@ -413,8 +402,6 @@ func (snap *Snapshot) RandCandidates(seed int64, n int) (SortableAddresses, erro
 	if len(candidates) > n {
 		candidates = candidates[:n]
 	}
-	//TODO test print log
-	printLog(candidates, n)
 	return candidates, nil
 }
 
