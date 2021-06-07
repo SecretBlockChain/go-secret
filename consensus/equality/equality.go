@@ -83,7 +83,6 @@ type Equality struct {
 // New creates a Equality proof-of-equality consensus engine with the initial
 // signers set to the ones provided by the user.
 func New(config *params.EqualityConfig, db ethdb.Database) *Equality {
-	config.Rewards.Sort()
 	signatures, _ := lru.NewARC(inMemorySignatures)
 	return &Equality{db: db, signatures: signatures, config: config}
 }
@@ -96,7 +95,7 @@ func (e *Equality) Close() error {
 // APIs returns the RPC APIs this consensus engine provides.
 func (e *Equality) APIs(chain consensus.ChainHeaderReader) []rpc.API {
 	return []rpc.API{{
-		Namespace: "dpos",
+		Namespace: "equality",
 		Version:   "1.0",
 		Service:   &API{chain: chain, equality: e},
 		Public:    true,
@@ -286,12 +285,13 @@ func (e *Equality) accumulateRewards(config params.EqualityConfig, state *state.
 		return
 	}
 
-	reward := new(big.Int).Set(blockReward)
-	base := reward.Div(reward, big.NewInt(10))
+	base := big.NewInt(0).Div(blockReward, big.NewInt(10))
 	state.AddBalance(header.Coinbase, base)
-	state.AddBalance(config.Pool, reward.Sub(reward, base))
+	state.AddBalance(config.Pool, big.NewInt(0).Sub(blockReward, base))
 
-	log.Info("[equality] Accumulate rewards", "address", header.Coinbase, "amount", reward)
+	log.Info("[equality] Accumulate rewards",
+		"coinbase", header.Coinbase, "amount", base,
+		"pool", config.Pool, "amount", big.NewInt(0).Sub(blockReward, base))
 }
 
 // Process custom transactions, write into header.Extra.

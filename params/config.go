@@ -20,7 +20,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"math/big"
-	"sort"
 	"time"
 
 	"github.com/SecretBlockChain/go-secret/common"
@@ -357,13 +356,6 @@ type EqualityReward struct {
 }
 
 type EqualityRewards []EqualityReward
-
-func (p EqualityRewards) Len() int           { return len(p) }
-func (p EqualityRewards) Less(i, j int) bool { return p[i].Number < p[j].Number }
-func (p EqualityRewards) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
-
-// Sort is a convenience method.
-func (p EqualityRewards) Sort() { sort.Sort(p) }
 
 // EqualityConfig is the consensus engine configs for proof-of-equality based sealing.
 type EqualityConfig struct {
