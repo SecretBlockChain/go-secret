@@ -205,14 +205,15 @@ func (e *Equality) chainConfigByHash(configHash common.Hash) (params.EqualityCon
 func (e *Equality) tryElect(config params.EqualityConfig, state *state.StateDB, header *types.Header,
 	snap *Snapshot, headerExtra *HeaderExtra) error {
 
-	// Is come to new epoch?
-	if header.Number.Uint64() != headerExtra.EpochBlock {
+	// Is come to next epoch?
+	number := header.Number.Uint64()
+	if number != headerExtra.EpochBlock {
 		return nil
 	}
 
 	// Find not active validators
 	needKickOutValidators := make(SortableAddresses, 0)
-	if header.Number.Uint64() <= 1 {
+	if number <= 1 {
 		for _, validator := range config.Validators {
 			if err := snap.BecomeCandidate(validator, 1, big.NewInt(0)); err != nil {
 				return err
@@ -267,6 +268,8 @@ func (e *Equality) tryElect(config params.EqualityConfig, state *state.StateDB, 
 	}
 
 	headerExtra.CurrentEpochValidators = append(headerExtra.CurrentEpochValidators, candidates...)
+	log.Info("[equality] Come to next epoch",
+		"number", number, "epoch", headerExtra.Epoch, "validators", headerExtra.CurrentEpochValidators)
 	return snap.SetValidators(headerExtra.CurrentEpochValidators)
 }
 

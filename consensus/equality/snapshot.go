@@ -8,6 +8,7 @@ import (
 	"math/big"
 	"math/rand"
 	"sort"
+	"strings"
 
 	"github.com/SecretBlockChain/go-secret/common"
 	"github.com/SecretBlockChain/go-secret/core/types"
@@ -49,6 +50,13 @@ func (p SortableAddresses) Less(i, j int) bool {
 	} else {
 		return p[i].Address.String() < p[j].Address.String()
 	}
+}
+func (p SortableAddresses) String() string {
+	s := make([]string, 0, len(p))
+	for _, addr := range p {
+		s = append(s, addr.Address.String())
+	}
+	return "[" + strings.Join(s, ",") + "]"
 }
 
 // Snapshot is the state of the authorization voting at a given block number.
