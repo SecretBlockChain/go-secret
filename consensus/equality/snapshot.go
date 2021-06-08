@@ -18,11 +18,17 @@ import (
 )
 
 var (
-	epochPrefix     = []byte("epoch-")     // epoch-validator:{validators}
-	candidatePrefix = []byte("candidate-") // candidate-{candidateAddr}:
-	mintCntPrefix   = []byte("mintCnt-")   // mintCnt-{epoch}..{validator}:{count}
-	configPrefix    = []byte("config")     // config:{params.EqualityConfig}
+	epochPrefix     = []byte("epoch-")     // key: epoch-validator:{validators}
+	candidatePrefix = []byte("candidate-") // key: candidate-{candidateAddr}:{Candidate}
+	mintCntPrefix   = []byte("mintCnt-")   // key: mintCnt-{epoch}..{validator}:{count}
+	configPrefix    = []byte("config")     // key: config:{params.EqualityConfig}
 )
+
+// Candidate basic information
+type Candidate struct {
+	Security    *big.Int
+	BlockNumber uint64
+}
 
 // SortableAddress sorted by votes.
 type SortableAddress struct {
@@ -109,28 +115,33 @@ func (snap *Snapshot) ensureTrie(prefix []byte) (*Trie, error) {
 
 // apply creates a new authorization snapshot by applying the given headers to
 // the original one.
-func (snap *Snapshot) apply(header *types.Header, headerExtra HeaderExtra) error {
+func (snap *Snapshot) apply(config params.EqualityConfig, header *types.Header, headerExtra HeaderExtra) error {
+	number := header.Number.Uint64()
 	for _, candidate := range headerExtra.CurrentBlockCandidates {
-		if err := snap.BecomeCandidate(candidate); err != nil {
+		if err := snap.BecomeCandidate(candidate, number, config.MinCandidateBalance); err != nil {
 			return err
 		}
 	}
+
 	for _, candidate := range headerExtra.CurrentBlockKickOutCandidates {
 		if err := snap.KickOutCandidate(candidate); err != nil {
 			return err
 		}
 	}
+
 	if header.Number.Uint64() == headerExtra.EpochBlock {
 		if err := snap.SetValidators(headerExtra.CurrentEpochValidators); err != nil {
 			return err
 		}
 	}
+
 	if len(headerExtra.ChainConfig) > 0 {
 		last := len(headerExtra.ChainConfig) - 1
 		if err := snap.SetChainConfig(headerExtra.ChainConfig[last]); err != nil {
 			return err
 		}
 	}
+
 	if err := snap.MintBlock(headerExtra.Epoch, header.Number.Uint64(), header.Coinbase); err != nil {
 		return err
 	}
@@ -356,7 +367,7 @@ func (snap *Snapshot) RandCandidates(seed int64, n int) (SortableAddresses, erro
 	// All candidate
 	candidates := make(SortableAddresses, 0)
 	for existCandidate {
-		candidate := iterCandidate.Value
+		candidate := iterCandidate.Key
 		candidateAddr := common.BytesToAddress(candidate)
 		candidates = append(candidates, SortableAddress{candidateAddr, big.NewInt(0)})
 		existCandidate = iterCandidate.Next()
@@ -374,16 +385,6 @@ func (snap *Snapshot) RandCandidates(seed int64, n int) (SortableAddresses, erro
 	return candidates, nil
 }
 
-// BecomeCandidate add a new candidate.
-func (snap *Snapshot) BecomeCandidate(candidateAddr common.Address) error {
-	candidateTrie, err := snap.ensureTrie(candidatePrefix)
-	if err != nil {
-		return err
-	}
-	candidate := candidateAddr.Bytes()
-	return candidateTrie.TryUpdate(candidate, candidate)
-}
-
 // KickOutCandidate kick out existing candidate.
 func (snap *Snapshot) KickOutCandidate(candidateAddr common.Address) error {
 	candidateTrie, err := snap.ensureTrie(candidatePrefix)
@@ -399,4 +400,23 @@ func (snap *Snapshot) KickOutCandidate(candidateAddr common.Address) error {
 		}
 	}
 	return nil
+}
+
+// BecomeCandidate add a new candidate.
+func (snap *Snapshot) BecomeCandidate(candidateAddr common.Address, blockNumber uint64, security *big.Int) error {
+	candidateTrie, err := snap.ensureTrie(candidatePrefix)
+	if err != nil {
+		return err
+	}
+
+	candidate := Candidate{
+		Security:    security,
+		BlockNumber: blockNumber,
+	}
+	key := candidateAddr.Bytes()
+	value, err := rlp.EncodeToBytes(candidate)
+	if err != nil {
+		return err
+	}
+	return candidateTrie.TryUpdate(key, value)
 }

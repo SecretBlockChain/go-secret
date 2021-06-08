@@ -214,7 +214,7 @@ func (e *Equality) tryElect(config params.EqualityConfig, state *state.StateDB, 
 	needKickOutValidators := make(SortableAddresses, 0)
 	if header.Number.Uint64() <= 1 {
 		for _, validator := range config.Validators {
-			if err := snap.BecomeCandidate(validator); err != nil {
+			if err := snap.BecomeCandidate(validator, 1, big.NewInt(0)); err != nil {
 				return err
 			}
 			headerExtra.CurrentBlockCandidates = append(headerExtra.CurrentBlockCandidates, validator)
@@ -295,10 +295,12 @@ func (e *Equality) accumulateRewards(config params.EqualityConfig, state *state.
 }
 
 // Process custom transactions, write into header.Extra.
-func (e *Equality) processTransactions(config params.EqualityConfig, state *state.StateDB, header *types.Header,
-	snap *Snapshot, headerExtra *HeaderExtra, txs []*types.Transaction, receipts []*types.Receipt) {
+func (e *Equality) processTransactions(
+	config params.EqualityConfig, state *state.StateDB, header *types.Header,
+	snap *Snapshot, headerExtra *HeaderExtra, txs []*types.Transaction) {
 
-	if header.Number.Int64() <= 1 {
+	number := header.Number.Uint64()
+	if number <= 1 {
 		if err := snap.SetChainConfig(config); err != nil {
 			panic(err)
 		}
@@ -320,7 +322,8 @@ func (e *Equality) processTransactions(config params.EqualityConfig, state *stat
 				if state.GetBalance(event.Candidate).Cmp(config.MinCandidateBalance) == -1 {
 					break
 				}
-				if err = snap.BecomeCandidate(event.Candidate); err == nil {
+				if err = snap.BecomeCandidate(event.Candidate, number, config.MinCandidateBalance); err == nil {
+					state.AddBalance(event.Candidate, big.NewInt(0).Neg(config.MinCandidateBalance))
 					headerExtra.CurrentBlockCandidates = append(headerExtra.CurrentBlockCandidates, event.Candidate)
 				}
 				count++

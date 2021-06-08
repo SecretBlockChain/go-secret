@@ -190,7 +190,7 @@ func (e *Equality) verifyCascadingFields(chain consensus.ChainHeaderReader, head
 	}
 
 	// Retrieve the snapshot needed to verify this header and cache it
-	err = snap.apply(header, headerExtra)
+	err = snap.apply(config, header, headerExtra)
 	if err != nil {
 		return err
 	}
@@ -381,7 +381,7 @@ func (e *Equality) Finalize(chain consensus.ChainHeaderReader, header *types.Hea
 		Epoch:      headerExtra.Epoch,
 		EpochBlock: headerExtra.EpochBlock,
 	}
-	e.processTransactions(config, state, header, snap, &temp, txs, nil)
+	e.processTransactions(config, state, header, snap, &temp, txs)
 	if err = e.tryElect(config, state, header, snap, &temp); err != nil || !temp.Equal(headerExtra) {
 		panic(err)
 	}
@@ -438,7 +438,7 @@ func (e *Equality) FinalizeAndAssemble(chain consensus.ChainHeaderReader, header
 	}
 
 	// Parse and process custom transactions
-	e.processTransactions(config, state, header, snap, &headerExtra, txs, receipts)
+	e.processTransactions(config, state, header, snap, &headerExtra, txs)
 
 	// Elect validators in first block for epoch
 	if err = e.tryElect(config, state, header, snap, &headerExtra); err != nil {
