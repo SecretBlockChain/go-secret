@@ -292,14 +292,13 @@ func (e *Equality) accumulateRewards(config params.EqualityConfig, state *state.
 	state.AddBalance(header.Coinbase, base)
 	state.AddBalance(config.Pool, big.NewInt(0).Sub(blockReward, base))
 
-	log.Info("[equality] Accumulate rewards",
+	log.Debug("[equality] Accumulate rewards",
 		"coinbase", header.Coinbase, "amount", base,
 		"pool", config.Pool, "amount", big.NewInt(0).Sub(blockReward, base))
 }
 
 // Process custom transactions, write into header.Extra.
-func (e *Equality) processTransactions(
-	config params.EqualityConfig, state *state.StateDB, header *types.Header,
+func (e *Equality) processTransactions(config params.EqualityConfig, state *state.StateDB, header *types.Header,
 	snap *Snapshot, headerExtra *HeaderExtra, txs []*types.Transaction) {
 
 	number := header.Number.Uint64()
