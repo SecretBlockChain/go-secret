@@ -126,7 +126,11 @@ func (snap *Snapshot) ensureTrie(prefix []byte) (*Trie, error) {
 func (snap *Snapshot) apply(config params.EqualityConfig, header *types.Header, headerExtra HeaderExtra) error {
 	number := header.Number.Uint64()
 	for _, candidate := range headerExtra.CurrentBlockCandidates {
-		if err := snap.BecomeCandidate(candidate, number, config.MinCandidateBalance); err != nil {
+		security := big.NewInt(0)
+		if number > 1 {
+			security = config.MinCandidateBalance
+		}
+		if err := snap.BecomeCandidate(candidate, number, security); err != nil {
 			return err
 		}
 	}
