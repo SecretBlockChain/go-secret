@@ -21,13 +21,13 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/SecretBlockChain/go-secret/common"
 	"github.com/SecretBlockChain/go-secret/consensus/ethash"
 	"github.com/SecretBlockChain/go-secret/core/rawdb"
 	"github.com/SecretBlockChain/go-secret/core/vm"
 	"github.com/SecretBlockChain/go-secret/ethdb"
 	"github.com/SecretBlockChain/go-secret/params"
+	"github.com/davecgh/go-spew/spew"
 )
 
 func TestDefaultGenesisBlock(t *testing.T) {
@@ -35,9 +35,9 @@ func TestDefaultGenesisBlock(t *testing.T) {
 	if block.Hash() != params.MainnetGenesisHash {
 		t.Errorf("wrong mainnet genesis hash, got %v, want %v", block.Hash(), params.MainnetGenesisHash)
 	}
-	block = DefaultRopstenGenesisBlock().ToBlock(nil)
-	if block.Hash() != params.RopstenGenesisHash {
-		t.Errorf("wrong ropsten genesis hash, got %v, want %v", block.Hash(), params.RopstenGenesisHash)
+	block = DefaultLocalnetGenesisBlock().ToBlock(nil)
+	if block.Hash() != params.LocalnetGenesisHash {
+		t.Errorf("wrong localnet genesis hash, got %v, want %v", block.Hash(), params.LocalnetGenesisHash)
 	}
 }
 
@@ -95,14 +95,14 @@ func TestSetupGenesis(t *testing.T) {
 			wantConfig: customg.Config,
 		},
 		{
-			name: "custom block in DB, genesis == ropsten",
+			name: "custom block in DB, genesis == localnet",
 			fn: func(db ethdb.Database) (*params.ChainConfig, common.Hash, error) {
 				customg.MustCommit(db)
-				return SetupGenesisBlock(db, DefaultRopstenGenesisBlock())
+				return SetupGenesisBlock(db, DefaultLocalnetGenesisBlock())
 			},
-			wantErr:    &GenesisMismatchError{Stored: customghash, New: params.RopstenGenesisHash},
-			wantHash:   params.RopstenGenesisHash,
-			wantConfig: params.RopstenChainConfig,
+			wantErr:    &GenesisMismatchError{Stored: customghash, New: params.LocalnetGenesisHash},
+			wantHash:   params.LocalnetGenesisHash,
+			wantConfig: params.LocalnetChainConfig,
 		},
 		{
 			name: "compatible config in DB",
