@@ -3,7 +3,9 @@ package equality
 import (
 	"bytes"
 	"compress/gzip"
+	"fmt"
 	"io"
+	"strings"
 
 	"github.com/SecretBlockChain/go-secret/common"
 	"github.com/SecretBlockChain/go-secret/core/types"
@@ -17,6 +19,24 @@ type Root struct {
 	CandidateHash common.Hash
 	MintCntHash   common.Hash
 	ConfigHash    common.Hash
+}
+
+func (root Root) PrintDifference(number uint64, other Root) {
+	slice := make([]string, 0)
+	slice = append(slice, fmt.Sprintf("BlockNumber: %d", number))
+	if root.EpochHash != other.EpochHash {
+		slice = append(slice, fmt.Sprintf("EpochHash: %s ---- %s", root.EpochHash.String(), other.EpochHash.String()))
+	}
+	if root.CandidateHash != other.CandidateHash {
+		slice = append(slice, fmt.Sprintf("CandidateHash: %s ---- %s", root.CandidateHash.String(), other.CandidateHash.String()))
+	}
+	if root.MintCntHash != other.MintCntHash {
+		slice = append(slice, fmt.Sprintf("MintCntHash: %s ---- %s", root.MintCntHash.String(), other.MintCntHash.String()))
+	}
+	if root.ConfigHash != other.ConfigHash {
+		slice = append(slice, fmt.Sprintf("ConfigHash: %s ---- %s", root.ConfigHash.String(), other.ConfigHash.String()))
+	}
+	fmt.Printf("######### Root Hash Difference #########\n%s\n", strings.Join(slice, "\n"))
 }
 
 // HeaderExtra is the struct of info in header.Extra[extraVanity:len(header.extra)-extraSeal].

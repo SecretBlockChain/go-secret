@@ -202,7 +202,7 @@ func (e *Equality) chainConfigByHash(configHash common.Hash) (params.EqualityCon
 }
 
 // Elect validators in first block for epoch.
-func (e *Equality) tryElect(config params.EqualityConfig, state *state.StateDB, header *types.Header,
+func (e *Equality) tryElect(config params.EqualityConfig, header *types.Header,
 	snap *Snapshot, headerExtra *HeaderExtra) error {
 
 	// Is come to next epoch?
@@ -245,7 +245,7 @@ func (e *Equality) tryElect(config params.EqualityConfig, state *state.StateDB, 
 				log.Info("[equality] No more candidate can be kick out",
 					"prevEpochID", headerExtra.Epoch-1,
 					"candidateCount", candidateCount, "needKickOutCount", len(needKickOutValidators)-i)
-				return nil
+				break
 			}
 
 			if err := snap.KickOutCandidate(validator.Address); err != nil {

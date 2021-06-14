@@ -3,6 +3,7 @@ package equality
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"io"
 	"math/big"
 	"time"
@@ -200,7 +201,9 @@ func (e *Equality) verifyCascadingFields(chain consensus.ChainHeaderReader, head
 		return err
 	}
 	if root != headerExtra.Root {
-		return errors.New("invalid trie root")
+		root.PrintDifference(number, headerExtra.Root)
+		parentHeaderExtra.Root.PrintDifference(number, headerExtra.Root)
+		return errors.New(fmt.Sprintf("invalid trie root, coinbase: %s", header.Coinbase.String()))
 	}
 
 	// Verify the seal and return
@@ -382,7 +385,7 @@ func (e *Equality) Finalize(chain consensus.ChainHeaderReader, header *types.Hea
 		EpochBlock: headerExtra.EpochBlock,
 	}
 	e.processTransactions(config, state, header, snap, &temp, txs)
-	if err = e.tryElect(config, state, header, snap, &temp); err != nil || !temp.Equal(headerExtra) {
+	if err = e.tryElect(config, header, snap, &temp); err != nil || !temp.Equal(headerExtra) {
 		panic(err)
 	}
 
@@ -441,7 +444,7 @@ func (e *Equality) FinalizeAndAssemble(chain consensus.ChainHeaderReader, header
 	e.processTransactions(config, state, header, snap, &headerExtra, txs)
 
 	// Elect validators in first block for epoch
-	if err = e.tryElect(config, state, header, snap, &headerExtra); err != nil {
+	if err = e.tryElect(config, header, snap, &headerExtra); err != nil {
 		log.Warn("[equality] Failed to try elect", "reason", err)
 		return nil, err
 	}
