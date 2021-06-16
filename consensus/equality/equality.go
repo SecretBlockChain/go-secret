@@ -329,6 +329,13 @@ func (e *Equality) processTransactions(config params.EqualityConfig, state *stat
 					headerExtra.CurrentBlockCandidates = append(headerExtra.CurrentBlockCandidates, event.Candidate)
 				}
 				count++
+			case *EventCancelCandidate:
+				event := ctx.(*EventCancelCandidate)
+				if security,err := snap.CancelCandidate(event.Delegator); err == nil {
+					state.AddBalance(event.Delegator, big.NewInt(0).Abs(security))
+					headerExtra.CurrentBlockCancelCandidates = append(headerExtra.CurrentBlockCancelCandidates, event.Delegator)
+				}
+				count++
 			}
 		}
 	}

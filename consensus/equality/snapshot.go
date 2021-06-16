@@ -141,6 +141,12 @@ func (snap *Snapshot) apply(config params.EqualityConfig, header *types.Header, 
 		}
 	}
 
+	for _, candidate := range headerExtra.CurrentBlockCancelCandidates {
+		if err := snap.KickOutCandidate(candidate); err != nil {
+			return err
+		}
+	}
+
 	if header.Number.Uint64() == headerExtra.EpochBlock {
 		if err := snap.SetValidators(headerExtra.CurrentEpochValidators); err != nil {
 			return err
@@ -431,4 +437,28 @@ func (snap *Snapshot) BecomeCandidate(candidateAddr common.Address, blockNumber 
 		return err
 	}
 	return candidateTrie.TryUpdate(key, value)
+}
+
+// CancelCandidate remove a candidate
+func (snap *Snapshot) CancelCandidate(candidateAddr common.Address) (*big.Int, error) {
+	candidateTrie, err := snap.ensureTrie(candidatePrefix)
+	if err != nil {
+		return big.NewInt(0), err
+	}
+
+	key := candidateAddr.Bytes()
+
+	var candidate Candidate
+	candidateRLP := candidateTrie.Get(key)
+	if err := rlp.DecodeBytes(candidateRLP, &candidate); err != nil {
+		return nil, fmt.Errorf("failed to decode candidate: %s", err)
+	}
+
+	err = candidateTrie.TryDelete(key)
+	if err != nil {
+		if _, ok := err.(*trie.MissingNodeError); !ok {
+			return big.NewInt(0), err
+		}
+	}
+	return candidate.Security, nil
 }

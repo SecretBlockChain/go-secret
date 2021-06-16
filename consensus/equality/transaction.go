@@ -26,6 +26,7 @@ const (
 var (
 	prototypes = []Transaction{
 		new(EventBecomeCandidate),
+		new(EventCancelCandidate),
 	}
 	prototypeMapper = map[TransactionType][]Transaction{}
 )
@@ -100,5 +101,29 @@ func (event *EventBecomeCandidate) Decode(tx *types.Transaction, data []byte) er
 		return err
 	}
 	event.Candidate = txSender
+	return nil
+}
+
+// EventCancelCandidate apply to cancel Candidate.
+// data like "equality:1:event:delegator"
+// Sender will cancel Candidate status,become a Delegator
+type EventCancelCandidate struct {
+	Delegator common.Address
+}
+
+func (event *EventCancelCandidate) Type() TransactionType {
+	return EventTransactionType
+}
+
+func (event *EventCancelCandidate) Action() string {
+	return "delegator"
+}
+
+func (event *EventCancelCandidate) Decode(tx *types.Transaction, data []byte) error {
+	txSender, err := types.Sender(types.NewEIP155Signer(tx.ChainId()), tx)
+	if err != nil {
+		return err
+	}
+	event.Delegator = txSender
 	return nil
 }

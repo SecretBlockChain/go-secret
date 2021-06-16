@@ -47,6 +47,7 @@ type HeaderExtra struct {
 	EpochBlock                    uint64
 	CurrentBlockCandidates        []common.Address
 	CurrentBlockKickOutCandidates []common.Address
+	CurrentBlockCancelCandidates  []common.Address
 	CurrentEpochValidators        SortableAddresses
 	ChainConfig                   []params.EqualityConfig
 }
@@ -129,6 +130,15 @@ func (headerExtra HeaderExtra) Equal(other HeaderExtra) bool {
 	}
 	for idx, candidate := range headerExtra.CurrentBlockKickOutCandidates {
 		if candidate != other.CurrentBlockKickOutCandidates[idx] {
+			return false
+		}
+	}
+
+	if len(headerExtra.CurrentBlockCancelCandidates) != len(other.CurrentBlockCancelCandidates) {
+		return false
+	}
+	for idx, candidate := range headerExtra.CurrentBlockCancelCandidates {
+		if candidate != other.CurrentBlockCancelCandidates[idx] {
 			return false
 		}
 	}
