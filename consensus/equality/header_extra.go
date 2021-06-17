@@ -47,6 +47,7 @@ type HeaderExtra struct {
 	EpochBlock                    uint64
 	CurrentBlockCandidates        []common.Address
 	CurrentBlockKickOutCandidates []common.Address
+	CurrentBlockCancelCandidates  []common.Address
 	CurrentEpochValidators        SortableAddresses
 	ChainConfig                   []params.EqualityConfig
 }
