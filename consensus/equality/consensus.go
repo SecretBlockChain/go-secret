@@ -352,7 +352,8 @@ func (e *Equality) Finalize(chain consensus.ChainHeaderReader, header *types.Hea
 	number := header.Number.Uint64()
 	headerExtra, err := decodeHeaderExtra(header)
 	if err != nil {
-		panic(err)
+		state.Reset(common.Hash{})
+		return
 	}
 
 	parent := chain.GetHeader(header.ParentHash, header.Number.Uint64()-1)
@@ -361,18 +362,21 @@ func (e *Equality) Finalize(chain consensus.ChainHeaderReader, header *types.Hea
 	} else {
 		parentHeaderExtra, err := decodeHeaderExtra(parent)
 		if err != nil {
-			panic(err)
+			state.Reset(common.Hash{})
+			return
 		}
 		snap, err = loadSnapshot(e.db, parentHeaderExtra.Root)
 	}
 	if err != nil {
-		panic(err)
+		state.Reset(common.Hash{})
+		return
 	}
 
 	// Get the chain configuration
 	config, err := e.chainConfig(parent)
 	if err != nil {
-		panic(err)
+		state.Reset(common.Hash{})
+		return
 	}
 
 	// Accumulate any block rewards and commit the final state root
@@ -386,7 +390,8 @@ func (e *Equality) Finalize(chain consensus.ChainHeaderReader, header *types.Hea
 	}
 	e.processTransactions(config, state, header, snap, &temp, txs)
 	if err = e.tryElect(config, header, snap, &temp); err != nil || !temp.Equal(headerExtra) {
-		panic(err)
+		state.Reset(common.Hash{})
+		return
 	}
 
 	// Accumulate any block and uncle rewards and commit the final state root
