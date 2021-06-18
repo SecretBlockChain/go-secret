@@ -337,6 +337,21 @@ func (snap *Snapshot) MintBlock(epoch, number uint64, validator common.Address) 
 	return mintCntTrie.TryUpdate(key, validator.Bytes())
 }
 
+// GetCandidates returns all candidates.
+func (snap *Snapshot) GetCandidates() ([]common.Address, error) {
+	candidateTrie, err := snap.ensureTrie(candidatePrefix)
+	if err != nil {
+		return nil, err
+	}
+
+	candidates := make([]common.Address, 0)
+	iterCandidate := trie.NewIterator(candidateTrie.NodeIterator(nil))
+	for iterCandidate.Next() {
+		candidates = append(candidates, common.BytesToAddress(iterCandidate.Key))
+	}
+	return candidates, nil
+}
+
 // EnoughCandidates count of candidates is greater than or equal to n.
 func (snap *Snapshot) EnoughCandidates(n int) (int, bool) {
 	candidateCount := 0
@@ -350,7 +365,7 @@ func (snap *Snapshot) EnoughCandidates(n int) (int, bool) {
 	}
 
 	iterCandidate := trie.NewIterator(candidateTrie.NodeIterator(nil))
-	if iterCandidate.Next() {
+	for iterCandidate.Next() {
 		candidateCount++
 		if candidateCount >= n {
 			return candidateCount, true

@@ -1,8 +1,7 @@
 package equality
 
 import (
-	"sort"
-
+	"github.com/SecretBlockChain/go-secret/common"
 	"github.com/SecretBlockChain/go-secret/consensus"
 	"github.com/SecretBlockChain/go-secret/core/types"
 	"github.com/SecretBlockChain/go-secret/rpc"
@@ -15,8 +14,32 @@ type API struct {
 	equality *Equality
 }
 
+// GetCandidates retrieves the list of the candidates at specified block
+func (api *API) GetCandidates(number *rpc.BlockNumber) ([]common.Address, error) {
+	var header *types.Header
+	if number == nil || *number == rpc.LatestBlockNumber {
+		header = api.chain.CurrentHeader()
+	} else {
+		header = api.chain.GetHeaderByNumber(uint64(number.Int64()))
+	}
+	if header == nil {
+		return nil, errUnknownBlock
+	}
+
+	headerExtra, err := decodeHeaderExtra(header)
+	if err != nil {
+		return nil, err
+	}
+
+	snap, err := loadSnapshot(api.equality.db, headerExtra.Root)
+	if err != nil {
+		return nil, err
+	}
+	return snap.GetCandidates()
+}
+
 // GetValidators retrieves the list of the validators at specified block
-func (api *API) GetValidators(number *rpc.BlockNumber) (SortableAddresses, error) {
+func (api *API) GetValidators(number *rpc.BlockNumber) ([]common.Address, error) {
 	var header *types.Header
 	if number == nil || *number == rpc.LatestBlockNumber {
 		header = api.chain.CurrentHeader()
@@ -41,6 +64,10 @@ func (api *API) GetValidators(number *rpc.BlockNumber) (SortableAddresses, error
 	if err != nil {
 		return nil, err
 	}
-	sort.Sort(validators)
-	return validators, nil
+
+	result := make([]common.Address, 0, len(validators))
+	for _, validator := range validators {
+		result = append(result, validator.Address)
+	}
+	return result, nil
 }
