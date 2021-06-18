@@ -23,6 +23,7 @@ build/_vendor/pkg
 .settings
 
 # used by the Makefile
+/devnet
 /build/_workspace/
 /build/cache/
 /build/bin/
