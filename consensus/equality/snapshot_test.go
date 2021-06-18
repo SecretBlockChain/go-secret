@@ -33,9 +33,7 @@ func TestLoadSnapshot(t *testing.T) {
 	assert.Nil(t, err)
 
 	validator1 := common.HexToAddress("0x44d1ce0b7cb3588bca96151fe1bc05af38f91b6c")
-	snap.SetValidators(SortableAddresses{
-		SortableAddress{Address: validator1, Weight: big.NewInt(0)},
-	})
+	snap.SetValidators([]common.Address{validator1})
 
 	root, err := snap.Root()
 	assert.Nil(t, err)
@@ -55,20 +53,15 @@ func TestSetValidators(t *testing.T) {
 	validator2 := common.HexToAddress("0xcc7c8317b21e1cea6139700c3c46c21af998d14c")
 	validator3 := common.HexToAddress("0x10702d5b794d97fb720e02506ecfdb1186a804b1")
 	validator4 := common.HexToAddress("0x19e28f4ca35205a5060d8375c9fca1a315f4d7b6")
-	err = snap.SetValidators(SortableAddresses{
-		SortableAddress{Address: validator1, Weight: big.NewInt(0)},
-		SortableAddress{Address: validator2, Weight: big.NewInt(0)},
-		SortableAddress{Address: validator3, Weight: big.NewInt(0)},
-		SortableAddress{Address: validator4, Weight: big.NewInt(0)},
-	})
+	err = snap.SetValidators([]common.Address{validator1, validator2, validator3, validator4})
 	assert.Nil(t, err)
 
 	validators, err := snap.GetValidators()
 	assert.Nil(t, err)
-	assert.Equal(t, validators[0].Address, validator1)
-	assert.Equal(t, validators[1].Address, validator2)
-	assert.Equal(t, validators[2].Address, validator3)
-	assert.Equal(t, validators[3].Address, validator4)
+	assert.Equal(t, validators[0], validator1)
+	assert.Equal(t, validators[1], validator2)
+	assert.Equal(t, validators[2], validator3)
+	assert.Equal(t, validators[3], validator4)
 }
 func TestRandCandidates(t *testing.T) {
 	db := rawdb.NewMemoryDatabase()
@@ -111,9 +104,10 @@ func TestKickOutCandidate(t *testing.T) {
 	candidates, err := snap.RandCandidates(100, 1)
 	assert.Nil(t, err)
 	assert.True(t, len(candidates) == 1)
-	assert.Equal(t, candidates[0].Address, candidate)
+	assert.Equal(t, candidates[0], candidate)
 
-	assert.Nil(t, snap.KickOutCandidate(candidate))
+	_, err = snap.CancelCandidate(candidate)
+	assert.Nil(t, err)
 	candidates, err = snap.RandCandidates(100, 1)
 	assert.Nil(t, err)
 	assert.True(t, len(candidates) == 0)
@@ -127,11 +121,7 @@ func TestCountMinted(t *testing.T) {
 	validator1 := common.HexToAddress("0xcc7c8317b21e1cea6139700c3c46c21af998d14c")
 	validator2 := common.HexToAddress("0x44d1ce0b7cb3588bca96151fe1bc05af38f91b6c")
 	validator3 := common.HexToAddress("0xf541c3cd1d2df407fb9bb52b3489fc2aaeedd97e")
-	assert.Nil(t, snap.SetValidators(SortableAddresses{
-		SortableAddress{Address: validator1, Weight: big.NewInt(0)},
-		SortableAddress{Address: validator2, Weight: big.NewInt(0)},
-		SortableAddress{Address: validator3, Weight: big.NewInt(0)},
-	}))
+	assert.Nil(t, snap.SetValidators([]common.Address{validator1, validator2, validator3}))
 
 	assert.Nil(t, snap.MintBlock(1, 1, validator1))
 	assert.Nil(t, snap.MintBlock(1, 2, validator1))

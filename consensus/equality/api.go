@@ -60,14 +60,5 @@ func (api *API) GetValidators(number *rpc.BlockNumber) ([]common.Address, error)
 		return nil, err
 	}
 
-	validators, err := snap.GetValidators()
-	if err != nil {
-		return nil, err
-	}
-
-	result := make([]common.Address, 0, len(validators))
-	for _, validator := range validators {
-		result = append(result, validator.Address)
-	}
-	return result, nil
+	return snap.GetValidators()
 }

@@ -136,13 +136,13 @@ func (snap *Snapshot) apply(config params.EqualityConfig, header *types.Header, 
 	}
 
 	for _, candidate := range headerExtra.CurrentBlockKickOutCandidates {
-		if err := snap.KickOutCandidate(candidate); err != nil {
+		if _, err := snap.CancelCandidate(candidate); err != nil {
 			return err
 		}
 	}
 
 	for _, candidate := range headerExtra.CurrentBlockCancelCandidates {
-		if err := snap.KickOutCandidate(candidate); err != nil {
+		if _, err := snap.CancelCandidate(candidate); err != nil {
 			return err
 		}
 	}
@@ -264,14 +264,14 @@ func (snap *Snapshot) SetChainConfig(config params.EqualityConfig) error {
 }
 
 // GetValidators returns validators of current epoch.
-func (snap *Snapshot) GetValidators() (SortableAddresses, error) {
+func (snap *Snapshot) GetValidators() ([]common.Address, error) {
 	epochTrie, err := snap.ensureTrie(epochPrefix)
 	if err != nil {
 		return nil, err
 	}
 
 	key := []byte("validator")
-	var validators SortableAddresses
+	var validators []common.Address
 	validatorsRLP := epochTrie.Get(key)
 	if err := rlp.DecodeBytes(validatorsRLP, &validators); err != nil {
 		return nil, fmt.Errorf("failed to decode validators: %s", err)
@@ -280,7 +280,7 @@ func (snap *Snapshot) GetValidators() (SortableAddresses, error) {
 }
 
 // SetValidators write validators of current epoch to snapshot.
-func (snap *Snapshot) SetValidators(validators SortableAddresses) error {
+func (snap *Snapshot) SetValidators(validators []common.Address) error {
 	key := []byte("validator")
 	validatorsRLP, err := rlp.EncodeToBytes(validators)
 	if err != nil {
@@ -317,17 +317,17 @@ func (snap *Snapshot) CountMinted(epoch uint64) (SortableAddresses, error) {
 		mapper[validator] = count + 1
 	}
 
+	addresses := make(SortableAddresses, 0)
 	for idx := range validators {
-		validator := &validators[idx]
-		count, ok := mapper[validator.Address]
+		count, ok := mapper[validators[idx]]
 		if !ok {
-			validator.Weight = big.NewInt(0)
+			addresses = append(addresses, SortableAddress{Address: validators[idx], Weight: big.NewInt(0)})
 		} else {
-			validator.Weight = big.NewInt(count)
+			addresses = append(addresses, SortableAddress{Address: validators[idx], Weight: big.NewInt(count)})
 		}
 	}
-	sort.Sort(sort.Reverse(validators))
-	return validators, nil
+	sort.Sort(sort.Reverse(addresses))
+	return addresses, nil
 }
 
 // ForgeBlock write validator of block to snapshot.
@@ -381,7 +381,7 @@ func (snap *Snapshot) EnoughCandidates(n int) (int, bool) {
 }
 
 // RandCandidates random return n candidates.
-func (snap *Snapshot) RandCandidates(seed int64, n int) (SortableAddresses, error) {
+func (snap *Snapshot) RandCandidates(seed int64, n int) ([]common.Address, error) {
 	if n <= 0 {
 		return nil, nil
 	}
@@ -398,11 +398,9 @@ func (snap *Snapshot) RandCandidates(seed int64, n int) (SortableAddresses, erro
 	}
 
 	// All candidate
-	candidates := make(SortableAddresses, 0)
+	candidates := make([]common.Address, 0)
 	for existCandidate {
-		candidate := iterCandidate.Key
-		candidateAddr := common.BytesToAddress(candidate)
-		candidates = append(candidates, SortableAddress{candidateAddr, big.NewInt(0)})
+		candidates = append(candidates, common.BytesToAddress(iterCandidate.Key))
 		existCandidate = iterCandidate.Next()
 	}
 
@@ -416,23 +414,6 @@ func (snap *Snapshot) RandCandidates(seed int64, n int) (SortableAddresses, erro
 		candidates = candidates[:n]
 	}
 	return candidates, nil
-}
-
-// KickOutCandidate kick out existing candidate.
-func (snap *Snapshot) KickOutCandidate(candidateAddr common.Address) error {
-	candidateTrie, err := snap.ensureTrie(candidatePrefix)
-	if err != nil {
-		return err
-	}
-
-	candidate := candidateAddr.Bytes()
-	err = candidateTrie.TryDelete(candidate)
-	if err != nil {
-		if _, ok := err.(*trie.MissingNodeError); !ok {
-			return err
-		}
-	}
-	return nil
 }
 
 // BecomeCandidate add a new candidate.

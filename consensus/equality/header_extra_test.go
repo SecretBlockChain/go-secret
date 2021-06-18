@@ -1,7 +1,6 @@
 package equality
 
 import (
-	"math/big"
 	"math/rand"
 	"testing"
 	"time"
@@ -19,10 +18,7 @@ func TestEncodeHeaderExtra(t *testing.T) {
 
 	address1 := common.HexToAddress("0xcc7c8317b21e1cea6139700c3c46c21af998d14c")
 	address2 := common.HexToAddress("0x44d1ce0b7cb3588bca96151fe1bc05af38f91b6c")
-	headerExtra.CurrentEpochValidators = SortableAddresses{
-		SortableAddress{Address: address1, Weight: big.NewInt(0)},
-		SortableAddress{Address: address2, Weight: big.NewInt(0)},
-	}
+	headerExtra.CurrentEpochValidators = []common.Address{address1, address2}
 	headerExtra.CurrentBlockCandidates = []common.Address{address1, address2}
 
 	data, err := headerExtra.Encode()
@@ -54,10 +50,7 @@ func TestHeaderExtraEqual(t *testing.T) {
 	otherHeaderExtra.CurrentBlockKickOutCandidates = append(otherHeaderExtra.CurrentBlockKickOutCandidates, headerExtra.CurrentBlockKickOutCandidates[0])
 	assert.True(t, headerExtra.Equal(otherHeaderExtra))
 
-	headerExtra.CurrentEpochValidators = append(headerExtra.CurrentEpochValidators, SortableAddress{
-		Address: common.HexToAddress("0xcc7c8317b21e1cea6139700c3c46c21af998d14c"),
-		Weight:  big.NewInt(1223),
-	})
+	headerExtra.CurrentEpochValidators = append(headerExtra.CurrentEpochValidators, common.HexToAddress("0xcc7c8317b21e1cea6139700c3c46c21af998d14c"))
 	assert.False(t, headerExtra.Equal(otherHeaderExtra))
 	otherHeaderExtra.CurrentEpochValidators = append(otherHeaderExtra.CurrentEpochValidators, headerExtra.CurrentEpochValidators[0])
 	assert.True(t, headerExtra.Equal(otherHeaderExtra))

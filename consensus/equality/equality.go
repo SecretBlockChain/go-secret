@@ -138,7 +138,6 @@ func (e *Equality) inTurn(config params.EqualityConfig,
 	lastBlockHeader *types.Header, nexBlockTime uint64, signer common.Address) bool {
 
 	validators := config.Validators
-
 	if lastBlockHeader != nil && lastBlockHeader.Number.Int64() > 0 {
 		headerExtra, err := decodeHeaderExtra(lastBlockHeader)
 		if err != nil {
@@ -150,14 +149,9 @@ func (e *Equality) inTurn(config params.EqualityConfig,
 			return false
 		}
 
-		addresses, err := snap.GetValidators()
+		validators, err = snap.GetValidators()
 		if err != nil {
 			return false
-		}
-
-		validators = make([]common.Address, 0, len(addresses))
-		for _, address := range addresses {
-			validators = append(validators, address.Address)
 		}
 	}
 
@@ -248,7 +242,7 @@ func (e *Equality) tryElect(config params.EqualityConfig, header *types.Header,
 				break
 			}
 
-			if err := snap.KickOutCandidate(validator.Address); err != nil {
+			if _, err := snap.CancelCandidate(validator.Address); err != nil {
 				return err
 			}
 
@@ -331,7 +325,7 @@ func (e *Equality) processTransactions(config params.EqualityConfig, state *stat
 				count++
 			case *EventCancelCandidate:
 				event := ctx.(*EventCancelCandidate)
-				if security,err := snap.CancelCandidate(event.Delegator); err == nil {
+				if security, err := snap.CancelCandidate(event.Delegator); err == nil {
 					state.AddBalance(event.Delegator, big.NewInt(0).Abs(security))
 					headerExtra.CurrentBlockCancelCandidates = append(headerExtra.CurrentBlockCancelCandidates, event.Delegator)
 				}

@@ -48,7 +48,7 @@ type HeaderExtra struct {
 	CurrentBlockCandidates        []common.Address
 	CurrentBlockKickOutCandidates []common.Address
 	CurrentBlockCancelCandidates  []common.Address
-	CurrentEpochValidators        SortableAddresses
+	CurrentEpochValidators        []common.Address
 	ChainConfig                   []params.EqualityConfig
 }
 
@@ -147,7 +147,7 @@ func (headerExtra HeaderExtra) Equal(other HeaderExtra) bool {
 		return false
 	}
 	for idx, validator := range headerExtra.CurrentEpochValidators {
-		if validator.Address != other.CurrentEpochValidators[idx].Address {
+		if validator != other.CurrentEpochValidators[idx] {
 			return false
 		}
 	}
