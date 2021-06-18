@@ -95,7 +95,7 @@ func (e *Equality) Close() error {
 // APIs returns the RPC APIs this consensus engine provides.
 func (e *Equality) APIs(chain consensus.ChainHeaderReader) []rpc.API {
 	return []rpc.API{{
-		Namespace: "equality",
+		Namespace: "eq",
 		Version:   "1.0",
 		Service:   &API{chain: chain, equality: e},
 		Public:    true,
