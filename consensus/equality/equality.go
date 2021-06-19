@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"math/big"
+	"strings"
 	"sync"
 	"time"
 
@@ -195,6 +196,14 @@ func (e *Equality) chainConfigByHash(configHash common.Hash) (params.EqualityCon
 	return config, nil
 }
 
+func validatorsToString(validators []common.Address) string {
+	slice := make([]string, 0, len(validators))
+	for _, validator := range validators {
+		slice = append(slice, validator.String())
+	}
+	return "[" + strings.Join(slice, ",") + "]"
+}
+
 // Elect validators in first block for epoch.
 func (e *Equality) tryElect(config params.EqualityConfig, header *types.Header,
 	snap *Snapshot, headerExtra *HeaderExtra) error {
@@ -263,7 +272,7 @@ func (e *Equality) tryElect(config params.EqualityConfig, header *types.Header,
 
 	headerExtra.CurrentEpochValidators = append(headerExtra.CurrentEpochValidators, candidates...)
 	log.Info("[equality] Come to next epoch",
-		"number", number, "epoch", headerExtra.Epoch, "validators", headerExtra.CurrentEpochValidators)
+		"number", number, "epoch", headerExtra.Epoch, "validators", validatorsToString(headerExtra.CurrentEpochValidators))
 	return snap.SetValidators(headerExtra.CurrentEpochValidators)
 }
 
@@ -325,9 +334,9 @@ func (e *Equality) processTransactions(config params.EqualityConfig, state *stat
 				count++
 			case *EventCancelCandidate:
 				event := ctx.(*EventCancelCandidate)
-				if security, err := snap.CancelCandidate(event.Delegator); err == nil {
-					state.AddBalance(event.Delegator, big.NewInt(0).Abs(security))
-					headerExtra.CurrentBlockCancelCandidates = append(headerExtra.CurrentBlockCancelCandidates, event.Delegator)
+				if security, err := snap.CancelCandidate(event.Candidate); err == nil {
+					state.AddBalance(event.Candidate, big.NewInt(0).Abs(security))
+					headerExtra.CurrentBlockCancelCandidates = append(headerExtra.CurrentBlockCancelCandidates, event.Candidate)
 				}
 				count++
 			}

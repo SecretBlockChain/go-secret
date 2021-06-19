@@ -238,7 +238,7 @@ type EqualityConfig struct {
 func DefaultEqualityConfig() *EqualityConfig {
 	return &EqualityConfig{
 		Period:              5,
-		Epoch:               17280,
+		Epoch:               12,
 		MaxValidatorsCount:  21,
 		MinCandidateBalance: big.NewInt(100),
 		GenesisTimestamp:    1623283200,

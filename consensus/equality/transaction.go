@@ -105,10 +105,10 @@ func (event *EventBecomeCandidate) Decode(tx *types.Transaction, data []byte) er
 }
 
 // EventCancelCandidate apply to cancel Candidate.
-// data like "equality:1:event:delegator"
-// Sender will cancel Candidate status,become a Delegator
+// data like "equality:1:event:candidateQuit"
+// Sender will cancel Candidate status
 type EventCancelCandidate struct {
-	Delegator common.Address
+	Candidate common.Address
 }
 
 func (event *EventCancelCandidate) Type() TransactionType {
@@ -116,7 +116,7 @@ func (event *EventCancelCandidate) Type() TransactionType {
 }
 
 func (event *EventCancelCandidate) Action() string {
-	return "delegator"
+	return "candidateQuit"
 }
 
 func (event *EventCancelCandidate) Decode(tx *types.Transaction, data []byte) error {
@@ -124,6 +124,6 @@ func (event *EventCancelCandidate) Decode(tx *types.Transaction, data []byte) er
 	if err != nil {
 		return err
 	}
-	event.Delegator = txSender
+	event.Candidate = txSender
 	return nil
 }

@@ -17,7 +17,7 @@ var testKey, _ = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d
 func TestCustomTransactionDecode(t *testing.T) {
 	address := common.HexToAddress("0x47746e8acb5dafe9c00b7195d0c2d830fcc04910")
 
-	fmt.Println("0x" + hex.EncodeToString([]byte("equality:1:event:candidate")))
+	fmt.Println("0x" + hex.EncodeToString([]byte("equality:1:event:candidate"))) // 0x657175616c6974793a313a6576656e743a63616e646964617465
 	tx := types.NewTransaction(1, address, big.NewInt(1024), 99999999, big.NewInt(1000), []byte("equality:1:event:candidate"))
 	tx, err := types.SignTx(tx, types.HomesteadSigner{}, testKey)
 	assert.Nil(t, err)
@@ -25,4 +25,13 @@ func TestCustomTransactionDecode(t *testing.T) {
 	ctx, err := NewTransaction(tx)
 	assert.Nil(t, err)
 	assert.IsType(t, new(EventBecomeCandidate), ctx)
+
+	fmt.Println("0x" + hex.EncodeToString([]byte("equality:1:event:candidateQuit"))) // 0x657175616c6974793a313a6576656e743a63616e64696461746551756974
+	tx = types.NewTransaction(1, address, big.NewInt(1024), 99999999, big.NewInt(1000), []byte("equality:1:event:candidateQuit"))
+	tx, err = types.SignTx(tx, types.HomesteadSigner{}, testKey)
+	assert.Nil(t, err)
+
+	ctx, err = NewTransaction(tx)
+	assert.Nil(t, err)
+	assert.IsType(t, new(EventCancelCandidate), ctx)
 }
