@@ -26,8 +26,8 @@ func TestCustomTransactionDecode(t *testing.T) {
 	assert.Nil(t, err)
 	assert.IsType(t, new(EventBecomeCandidate), ctx)
 
-	fmt.Println("0x" + hex.EncodeToString([]byte("equality:1:event:candidateQuit"))) // 0x657175616c6974793a313a6576656e743a63616e64696461746551756974
-	tx = types.NewTransaction(1, address, big.NewInt(1024), 99999999, big.NewInt(1000), []byte("equality:1:event:candidateQuit"))
+	fmt.Println("0x" + hex.EncodeToString([]byte("equality:1:event:delegator"))) // 0x657175616c6974793a313a6576656e743a64656c656761746f72
+	tx = types.NewTransaction(1, address, big.NewInt(1024), 99999999, big.NewInt(1000), []byte("equality:1:event:delegator"))
 	tx, err = types.SignTx(tx, types.HomesteadSigner{}, testKey)
 	assert.Nil(t, err)
 

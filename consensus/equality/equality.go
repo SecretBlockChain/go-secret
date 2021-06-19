@@ -334,9 +334,9 @@ func (e *Equality) processTransactions(config params.EqualityConfig, state *stat
 				count++
 			case *EventCancelCandidate:
 				event := ctx.(*EventCancelCandidate)
-				if security, err := snap.CancelCandidate(event.Candidate); err == nil {
-					state.AddBalance(event.Candidate, big.NewInt(0).Abs(security))
-					headerExtra.CurrentBlockCancelCandidates = append(headerExtra.CurrentBlockCancelCandidates, event.Candidate)
+				if security, err := snap.CancelCandidate(event.Delegator); err == nil {
+					state.AddBalance(event.Delegator, big.NewInt(0).Abs(security))
+					headerExtra.CurrentBlockCancelCandidates = append(headerExtra.CurrentBlockCancelCandidates, event.Delegator)
 				}
 				count++
 			}
