@@ -22,13 +22,17 @@ import (
 	"math/big"
 
 	"github.com/SecretBlockChain/go-secret/common"
+	"github.com/SecretBlockChain/go-secret/common/math"
 	"github.com/SecretBlockChain/go-secret/crypto"
 )
+
+//go:generate gencodec -type EqualityReward -field-override equalityRewardMarshaling -out gen_equality_reward.go
+//go:generate gencodec -type EqualityConfig -field-override equalityConfigMarshaling -out gen_equality_config.go
 
 // Genesis hashes to enforce below configs on.
 var (
 	MainnetGenesisHash  = common.HexToHash("0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3")
-	LocalnetGenesisHash = common.HexToHash("0x46f638ba95595eab0a9630b8ac53ba2e612ab4adeda0b4bc100bf3c51bf5b37f")
+	LocalnetGenesisHash = common.HexToHash("0xf024c8cb7b92ea396317b9a64afec723c48fc8df1843ce02c171daf95a5b7dc0")
 )
 
 // TrustedCheckpoints associates each known checkpoint with the genesis hash of
@@ -216,36 +220,55 @@ func (c *CliqueConfig) String() string {
 
 // EqualityReward is reward rule of mint block.
 type EqualityReward struct {
-	Number uint64   `json:"number"` // Block number
-	Reward *big.Int `json:"reward"` // Token reward of mint block
+	Number uint64   `json:"number"`                     // Block number
+	Reward *big.Int `json:"reward" gencodec:"required"` // Token reward of mint block
 }
 
 type EqualityRewards []EqualityReward
 
 // EqualityConfig is the consensus engine configs for proof-of-equality based sealing.
 type EqualityConfig struct {
-	Period              uint64           `json:"period"`              // Number of seconds between blocks to enforce
-	Epoch               uint64           `json:"epoch"`               // Epoch length to reset votes and checkpoint
-	MaxValidatorsCount  uint64           `json:"maxValidatorsCount"`  // Max count of validators
-	MinCandidateBalance *big.Int         `json:"minCandidateBalance"` // Min candidate balance to valid this candidate
-	GenesisTimestamp    uint64           `json:"genesisTimestamp"`    // The timestamp of first Block
-	Validators          []common.Address `json:"validators"`          // Genesis validator list
-	Pool                common.Address   `json:"pool"`                // Deposit pool address
-	Rewards             EqualityRewards  `json:"rewards"`             // Reward rule of mint block
+	Period              uint64           `json:"period"`                                  // Number of seconds between blocks to enforce
+	Epoch               uint64           `json:"epoch"`                                   // Epoch length to reset votes and checkpoint
+	MaxValidatorsCount  uint64           `json:"maxValidatorsCount"`                      // Max count of validators
+	MinCandidateBalance *big.Int         `json:"minCandidateBalance" gencodec:"required"` // Min candidate balance to valid this candidate
+	GenesisTimestamp    uint64           `json:"genesisTimestamp"`                        // The timestamp of first Block
+	Validators          []common.Address `json:"validators"`                              // Genesis validator list
+	Pool                common.Address   `json:"pool"`                                    // Deposit pool address
+	Rewards             EqualityRewards  `json:"rewards"`                                 // Reward rule of mint block
+}
+
+type equalityRewardMarshaling struct {
+	Number uint64
+	Reward *math.HexOrDecimal256
+}
+
+type equalityConfigMarshaling struct {
+	Period              uint64
+	Epoch               uint64
+	MaxValidatorsCount  uint64
+	MinCandidateBalance *math.HexOrDecimal256
+	GenesisTimestamp    uint64
+	Validators          []common.Address
+	Pool                common.Address
+	Rewards             EqualityRewards
 }
 
 // DefaultEqualityConfig returns default config of equality consensus engine.
 func DefaultEqualityConfig() *EqualityConfig {
+	reward, _ := big.NewInt(0).SetString("1bc16d674ec80000", 16)
+	minCandidateBalance, _ := big.NewInt(0).SetString("56bc75e2d63100000", 16)
+
 	return &EqualityConfig{
 		Period:              5,
 		Epoch:               12,
 		MaxValidatorsCount:  21,
-		MinCandidateBalance: big.NewInt(100),
+		MinCandidateBalance: minCandidateBalance,
 		GenesisTimestamp:    1623283200,
 		Rewards: []EqualityReward{
 			{
 				Number: 45000000,
-				Reward: big.NewInt(2000000000000000000),
+				Reward: reward,
 			},
 			{
 				Number: 45000001,

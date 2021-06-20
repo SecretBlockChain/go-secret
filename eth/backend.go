@@ -120,6 +120,7 @@ func New(stack *node.Node, config *Config) (*Ethereum, error) {
 		return nil, err
 	}
 	chainConfig, genesisHash, genesisErr := core.SetupGenesisBlock(chainDb, config.Genesis)
+	fmt.Println(genesisHash.String())
 	if _, ok := genesisErr.(*params.ConfigCompatError); genesisErr != nil && !ok {
 		return nil, genesisErr
 	}
@@ -330,7 +331,7 @@ func (s *Ethereum) APIs() []rpc.API {
 			Version:   "1.0",
 			Service:   filters.NewPublicFilterAPI(s.APIBackend, false),
 			Public:    true,
-		},{
+		}, {
 			Namespace: "admin",
 			Version:   "1.0",
 			Service:   NewPrivateAdminAPI(s),
