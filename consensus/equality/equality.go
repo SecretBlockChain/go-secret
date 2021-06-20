@@ -328,14 +328,14 @@ func (e *Equality) processTransactions(config params.EqualityConfig, state *stat
 					break
 				}
 				if err = snap.BecomeCandidate(event.Candidate, number, config.MinCandidateBalance); err == nil {
-					state.AddBalance(event.Candidate, big.NewInt(0).Neg(config.MinCandidateBalance))
+					state.SubBalance(event.Candidate, config.MinCandidateBalance)
 					headerExtra.CurrentBlockCandidates = append(headerExtra.CurrentBlockCandidates, event.Candidate)
 				}
 				count++
 			case *EventCancelCandidate:
 				event := ctx.(*EventCancelCandidate)
 				if security, err := snap.CancelCandidate(event.Delegator); err == nil {
-					state.AddBalance(event.Delegator, big.NewInt(0).Abs(security))
+					state.AddBalance(event.Delegator, security)
 					headerExtra.CurrentBlockCancelCandidates = append(headerExtra.CurrentBlockCancelCandidates, event.Delegator)
 				}
 				count++
