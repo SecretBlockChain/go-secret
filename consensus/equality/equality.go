@@ -271,7 +271,7 @@ func (e *Equality) tryElect(config params.EqualityConfig, header *types.Header,
 	}
 
 	headerExtra.CurrentEpochValidators = append(headerExtra.CurrentEpochValidators, candidates...)
-	log.Info("[equality] Come to next epoch",
+	log.Debug("[equality] Come to next epoch",
 		"number", number, "epoch", headerExtra.Epoch, "validators", validatorsToString(headerExtra.CurrentEpochValidators))
 	return snap.SetValidators(headerExtra.CurrentEpochValidators)
 }
