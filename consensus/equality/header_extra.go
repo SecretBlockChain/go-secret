@@ -154,7 +154,7 @@ func (headerExtra HeaderExtra) Equal(other HeaderExtra) bool {
 	return true
 }
 
-func decodeHeaderExtra(header *types.Header) (HeaderExtra, error) {
+func DecodeHeaderExtra(header *types.Header) (HeaderExtra, error) {
 	headerExtra := header.Extra
 	if len(headerExtra) < extraVanity {
 		return HeaderExtra{}, errMissingVanity

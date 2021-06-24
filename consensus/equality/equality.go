@@ -140,7 +140,7 @@ func (e *Equality) inTurn(config params.EqualityConfig,
 
 	validators := config.Validators
 	if lastBlockHeader != nil && lastBlockHeader.Number.Int64() > 0 {
-		headerExtra, err := decodeHeaderExtra(lastBlockHeader)
+		headerExtra, err := DecodeHeaderExtra(lastBlockHeader)
 		if err != nil {
 			return false
 		}
@@ -171,7 +171,7 @@ func (e *Equality) chainConfig(header *types.Header) (params.EqualityConfig, err
 		return *e.config, nil
 	}
 
-	headerExtra, err := decodeHeaderExtra(header)
+	headerExtra, err := DecodeHeaderExtra(header)
 	if err != nil {
 		return params.EqualityConfig{}, err
 	}

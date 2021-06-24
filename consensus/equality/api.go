@@ -26,7 +26,7 @@ func (api *API) GetCandidates(number *rpc.BlockNumber) ([]common.Address, error)
 		return nil, errUnknownBlock
 	}
 
-	headerExtra, err := decodeHeaderExtra(header)
+	headerExtra, err := DecodeHeaderExtra(header)
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +50,7 @@ func (api *API) GetValidators(number *rpc.BlockNumber) ([]common.Address, error)
 		return nil, errUnknownBlock
 	}
 
-	headerExtra, err := decodeHeaderExtra(header)
+	headerExtra, err := DecodeHeaderExtra(header)
 	if err != nil {
 		return nil, err
 	}

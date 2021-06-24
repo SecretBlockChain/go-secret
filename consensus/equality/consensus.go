@@ -155,7 +155,7 @@ func (e *Equality) verifyCascadingFields(chain consensus.ChainHeaderReader, head
 	// Load snapshot of parent block
 	var snap *Snapshot
 	config := *e.config
-	headerExtra, err := decodeHeaderExtra(header)
+	headerExtra, err := DecodeHeaderExtra(header)
 	if err != nil {
 		return err
 	}
@@ -167,7 +167,7 @@ func (e *Equality) verifyCascadingFields(chain consensus.ChainHeaderReader, head
 			return err
 		}
 	} else {
-		parentHeaderExtra, err = decodeHeaderExtra(parent)
+		parentHeaderExtra, err = DecodeHeaderExtra(parent)
 		if err != nil {
 			return err
 		}
@@ -297,7 +297,7 @@ func (e *Equality) Prepare(chain consensus.ChainHeaderReader, header *types.Head
 		headerExtra.Epoch = 1
 		headerExtra.EpochBlock = number
 	} else {
-		parentHeaderExtra, err := decodeHeaderExtra(parent)
+		parentHeaderExtra, err := DecodeHeaderExtra(parent)
 		if err != nil {
 			return err
 		}
@@ -350,7 +350,7 @@ func (e *Equality) Finalize(chain consensus.ChainHeaderReader, header *types.Hea
 	// Load snapshot of parent block
 	var snap *Snapshot
 	number := header.Number.Uint64()
-	headerExtra, err := decodeHeaderExtra(header)
+	headerExtra, err := DecodeHeaderExtra(header)
 	if err != nil {
 		state.Reset(common.Hash{})
 		return
@@ -360,7 +360,7 @@ func (e *Equality) Finalize(chain consensus.ChainHeaderReader, header *types.Hea
 	if number <= 1 {
 		snap, err = newSnapshot(e.db)
 	} else {
-		parentHeaderExtra, err := decodeHeaderExtra(parent)
+		parentHeaderExtra, err := DecodeHeaderExtra(parent)
 		if err != nil {
 			state.Reset(common.Hash{})
 			return
@@ -410,7 +410,7 @@ func (e *Equality) FinalizeAndAssemble(chain consensus.ChainHeaderReader, header
 	log.Trace("[equality] FinalizeAndAssemble", "number", header.Number.Int64())
 
 	// Load snapshot of last block
-	oldHeaderExtra, err := decodeHeaderExtra(header)
+	oldHeaderExtra, err := DecodeHeaderExtra(header)
 	if err != nil {
 		return nil, err
 	}
@@ -420,7 +420,7 @@ func (e *Equality) FinalizeAndAssemble(chain consensus.ChainHeaderReader, header
 	}
 	parent := chain.GetHeader(header.ParentHash, header.Number.Uint64()-1)
 	if header.Number.Int64() > 1 {
-		parentHeaderExtra, err := decodeHeaderExtra(parent)
+		parentHeaderExtra, err := DecodeHeaderExtra(parent)
 		if err != nil {
 			return nil, err
 		}
