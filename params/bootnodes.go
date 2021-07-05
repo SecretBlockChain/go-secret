@@ -40,20 +40,9 @@ var LocalnetBootnodes = []string{
 	"enode://3dcc040e7b6957f6b25041d8a797403dfb713d17cbcf85f118a8f86e2288df938696d7d078b3f7b79b90b9082c17e2da02e371587328d6847978eb248a6998df@207.46.145.61:30312",
 }
 
-const dnsPrefix = "enrtree://AKA3AM6LPBYEUDMVNU3BSVQJ5AD45Y7YPOHJLEF6W26QOE4VTUDPE@"
-
 // KnownDNSNetwork returns the address of a public DNS-based node list for the given
 // genesis hash and protocol. See https://github.com/ethereum/discv4-dns-lists for more
 // information.
 func KnownDNSNetwork(genesis common.Hash, protocol string) string {
-	var net string
-	switch genesis {
-	case MainnetGenesisHash:
-		net = "mainnet"
-	case LocalnetGenesisHash:
-		net = "localnet"
-	default:
-		return ""
-	}
-	return dnsPrefix + protocol + "." + net + ".ethdisco.net"
+	return ""
 }
