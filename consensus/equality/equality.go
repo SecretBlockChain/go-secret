@@ -226,7 +226,7 @@ func (e *Equality) tryElect(config params.EqualityConfig, header *types.Header,
 
 		headerExtra.CurrentBlockCandidates = addressesDistinct(headerExtra.CurrentBlockCandidates)
 	} else {
-		minMint := big.NewInt(int64(config.Epoch / config.Period / config.MaxValidatorsCount / 2))
+		minMint := big.NewInt(int64(config.Epoch / config.MaxValidatorsCount / 2))
 		validators, err := snap.CountMinted(headerExtra.Epoch - 1)
 		if err != nil {
 			return err
