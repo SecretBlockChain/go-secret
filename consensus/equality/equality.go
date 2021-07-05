@@ -218,7 +218,7 @@ func (e *Equality) tryElect(config params.EqualityConfig, header *types.Header,
 	needKickOutValidators := make(SortableAddresses, 0)
 	if number <= 1 {
 		for _, validator := range config.Validators {
-			if err := snap.BecomeCandidate(validator, 1, big.NewInt(0)); err != nil {
+			if _, err := snap.BecomeCandidate(validator, 1, big.NewInt(0)); err != nil {
 				return err
 			}
 			headerExtra.CurrentBlockCandidates = append(headerExtra.CurrentBlockCandidates, validator)
@@ -327,9 +327,11 @@ func (e *Equality) processTransactions(config params.EqualityConfig, state *stat
 				if state.GetBalance(event.Candidate).Cmp(config.MinCandidateBalance) == -1 {
 					break
 				}
-				if err = snap.BecomeCandidate(event.Candidate, number, config.MinCandidateBalance); err == nil {
-					state.SubBalance(event.Candidate, config.MinCandidateBalance)
-					headerExtra.CurrentBlockCandidates = append(headerExtra.CurrentBlockCandidates, event.Candidate)
+				if alreadyIsCandidate, err := snap.BecomeCandidate(event.Candidate, number, config.MinCandidateBalance); err == nil {
+					if !alreadyIsCandidate {
+						state.SubBalance(event.Candidate, config.MinCandidateBalance)
+						headerExtra.CurrentBlockCandidates = append(headerExtra.CurrentBlockCandidates, event.Candidate)
+					}
 				}
 				count++
 			case *EventCancelCandidate:

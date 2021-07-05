@@ -130,7 +130,7 @@ func (snap *Snapshot) apply(config params.EqualityConfig, header *types.Header, 
 		if number > 1 {
 			security = config.MinCandidateBalance
 		}
-		if err := snap.BecomeCandidate(candidate, number, security); err != nil {
+		if _, err := snap.BecomeCandidate(candidate, number, security); err != nil {
 			return err
 		}
 	}
@@ -416,23 +416,29 @@ func (snap *Snapshot) RandCandidates(seed int64, n int) ([]common.Address, error
 	return candidates, nil
 }
 
-// BecomeCandidate add a new candidate.
-func (snap *Snapshot) BecomeCandidate(candidateAddr common.Address, blockNumber uint64, security *big.Int) error {
+// BecomeCandidate add a new candidate,return a bool value means address already is or not a candidate
+func (snap *Snapshot) BecomeCandidate(candidateAddr common.Address, blockNumber uint64, security *big.Int) (bool, error) {
 	candidateTrie, err := snap.ensureTrie(candidatePrefix)
 	if err != nil {
-		return err
+		return false, err
+	}
+
+	key := candidateAddr.Bytes()
+	candidateRLP, err := candidateTrie.TryGet(key)
+	if err == nil && candidateRLP != nil {
+		return true, nil
 	}
 
 	candidate := Candidate{
 		Security:    security,
 		BlockNumber: blockNumber,
 	}
-	key := candidateAddr.Bytes()
+
 	value, err := rlp.EncodeToBytes(candidate)
 	if err != nil {
-		return err
+		return false, err
 	}
-	return candidateTrie.TryUpdate(key, value)
+	return false, candidateTrie.TryUpdate(key, value)
 }
 
 // CancelCandidate remove a candidate
