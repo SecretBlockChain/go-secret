@@ -425,7 +425,10 @@ func (snap *Snapshot) BecomeCandidate(candidateAddr common.Address, blockNumber 
 
 	key := candidateAddr.Bytes()
 	candidateRLP, err := candidateTrie.TryGet(key)
-	if err == nil && candidateRLP != nil {
+	if err != nil {
+		return false, err
+	}
+	if candidateRLP != nil {
 		return true, nil
 	}
 
