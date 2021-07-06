@@ -110,7 +110,7 @@ func (w *wizard) makeGenesis() {
 	case choice == "" || choice == "3":
 		// In the case of alien, configure the consensus parameters
 		genesis.Difficulty = big.NewInt(1)
-		genesis.Config.Equality = params.DefaultEqualityConfig()
+		genesis.Config.Equality = params.TestnetEqualityConfig()
 		fmt.Println()
 		fmt.Println("How many seconds should blocks take? (default = 5)")
 		genesis.Config.Equality.Period = uint64(w.readDefaultInt(5))
