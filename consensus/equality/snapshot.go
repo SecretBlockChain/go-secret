@@ -427,7 +427,9 @@ func (snap *Snapshot) BecomeCandidate(candidateAddr common.Address, blockNumber 
 	if blockNumber >= 250000 {
 		candidateRLP, err := candidateTrie.TryGet(key)
 		if err != nil {
-			return false, err
+			if _, ok := err.(*trie.MissingNodeError); !ok {
+				return false, err
+			}
 		}
 		if candidateRLP != nil {
 			return true, nil
