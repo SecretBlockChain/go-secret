@@ -17,8 +17,9 @@ func TestSetChainConfig(t *testing.T) {
 	assert.Nil(t, err)
 
 	config := params.EqualityConfig{
-		Period:             1024,
-		MaxValidatorsCount: 21,
+		Period:              1024,
+		MaxValidatorsCount:  21,
+		MinCandidateBalance: big.NewInt(1000),
 	}
 	assert.Nil(t, snap.SetChainConfig(config))
 
@@ -69,19 +70,24 @@ func TestRandCandidates(t *testing.T) {
 	assert.Nil(t, err)
 
 	candidate1 := common.HexToAddress("0xcc7c8317b21e1cea6139700c3c46c21af998d14c")
-	assert.Nil(t, snap.BecomeCandidate(candidate1, 1, big.NewInt(0)))
+	_, err = snap.BecomeCandidate(candidate1, 1, big.NewInt(0))
+	assert.Nil(t, err)
 
 	candidate2 := common.HexToAddress("0x19e28f4ca35205a5060d8375c9fca1a315f4d7b6")
-	assert.Nil(t, snap.BecomeCandidate(candidate2, 1, big.NewInt(0)))
+	_, err = snap.BecomeCandidate(candidate2, 1, big.NewInt(0))
+	assert.Nil(t, err)
 
 	candidate3 := common.HexToAddress("0x08317854e853facf0bff9e360583d80c1596ed7a")
-	assert.Nil(t, snap.BecomeCandidate(candidate3, 1, big.NewInt(0)))
+	_, err = snap.BecomeCandidate(candidate3, 1, big.NewInt(0))
+	assert.Nil(t, err)
 
 	candidate4 := common.HexToAddress("0x7bee0c6d5132e39622bdb6c0fc9f16b350f09453")
-	assert.Nil(t, snap.BecomeCandidate(candidate4, 1, big.NewInt(0)))
+	_, err = snap.BecomeCandidate(candidate4, 1, big.NewInt(0))
+	assert.Nil(t, err)
 
 	candidate5 := common.HexToAddress("0xf541c3cd1d2df407fb9bb52b3489fc2aaeedd97e")
-	assert.Nil(t, snap.BecomeCandidate(candidate5, 1, big.NewInt(0)))
+	_, err = snap.BecomeCandidate(candidate5, 1, big.NewInt(0))
+	assert.Nil(t, err)
 
 	addresses, err := snap.RandCandidates(100, 3)
 
@@ -99,7 +105,8 @@ func TestKickOutCandidate(t *testing.T) {
 	candidate := common.HexToAddress("0xcc7c8317b21e1cea6139700c3c46c21af998d14c")
 	delegator := common.HexToAddress("0x44d1ce0b7cb3588bca96151fe1bc05af38f91b6c")
 	statedb.AddBalance(delegator, big.NewInt(10000))
-	assert.Nil(t, snap.BecomeCandidate(candidate, 1, big.NewInt(0)))
+	_, err = snap.BecomeCandidate(candidate, 1, big.NewInt(0))
+	assert.Nil(t, err)
 
 	candidates, err := snap.RandCandidates(100, 1)
 	assert.Nil(t, err)
