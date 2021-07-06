@@ -31,8 +31,8 @@ import (
 
 // Genesis hashes to enforce below configs on.
 var (
-	MainnetGenesisHash  = common.HexToHash("0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3")
-	LocalnetGenesisHash = common.HexToHash("0xf024c8cb7b92ea396317b9a64afec723c48fc8df1843ce02c171daf95a5b7dc0")
+	MainnetGenesisHash = common.HexToHash("0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3")
+	TestnetGenesisHash = common.HexToHash("0xf024c8cb7b92ea396317b9a64afec723c48fc8df1843ce02c171daf95a5b7dc0")
 )
 
 // TrustedCheckpoints associates each known checkpoint with the genesis hash of
@@ -87,8 +87,8 @@ var (
 		Threshold: 2,
 	}
 
-	// LocalnetChainConfig contains the chain parameters to run a node on the Local test network.
-	LocalnetChainConfig = &ChainConfig{
+	// TestnetChainConfig contains the chain parameters to run a node on the test network.
+	TestnetChainConfig = &ChainConfig{
 		ChainID:             big.NewInt(21610),
 		HomesteadBlock:      big.NewInt(0),
 		DAOForkSupport:      false,
@@ -101,7 +101,7 @@ var (
 		PetersburgBlock:     big.NewInt(0),
 		IstanbulBlock:       big.NewInt(0),
 		MuirGlacierBlock:    big.NewInt(0),
-		Equality:            DefaultEqualityConfig(),
+		Equality:            TestnetEqualityConfig(),
 	}
 
 	// AllEthashProtocolChanges contains every protocol change (EIPs) introduced
@@ -254,8 +254,8 @@ type equalityConfigMarshaling struct {
 	Rewards             EqualityRewards
 }
 
-// DefaultEqualityConfig returns default config of equality consensus engine.
-func DefaultEqualityConfig() *EqualityConfig {
+// TestnetEqualityConfig returns testnet config of equality consensus engine.
+func TestnetEqualityConfig() *EqualityConfig {
 	reward, _ := big.NewInt(0).SetString("1bc16d674ec80000", 16)
 	minCandidateBalance, _ := big.NewInt(0).SetString("56bc75e2d63100000", 16)
 

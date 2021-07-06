@@ -237,8 +237,8 @@ func (g *Genesis) configOrDefault(ghash common.Hash) *params.ChainConfig {
 		return g.Config
 	case ghash == params.MainnetGenesisHash:
 		return params.MainnetChainConfig
-	case ghash == params.LocalnetGenesisHash:
-		return params.LocalnetChainConfig
+	case ghash == params.TestnetGenesisHash:
+		return params.TestnetChainConfig
 	default:
 		return params.AllEthashProtocolChanges
 	}
@@ -338,16 +338,16 @@ func DefaultGenesisBlock() *Genesis {
 	}
 }
 
-// DefaultLocalnetGenesisBlock returns the Local network genesis block.
-func DefaultLocalnetGenesisBlock() *Genesis {
+// DefaultTestnetGenesisBlock returns the testnet network genesis block.
+func DefaultTestnetGenesisBlock() *Genesis {
 	return &Genesis{
-		Config:     params.LocalnetChainConfig,
+		Config:     params.TestnetChainConfig,
 		Nonce:      0,
 		ExtraData:  hexutil.MustDecode("0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
 		GasLimit:   50000000,
 		Difficulty: big.NewInt(1),
 		Timestamp:  1623283200,
-		Alloc:      decodePrealloc(localnetAllocData),
+		Alloc:      decodePrealloc(testnetAllocData),
 	}
 }
 

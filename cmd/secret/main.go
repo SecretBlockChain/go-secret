@@ -280,11 +280,10 @@ func prepare(ctx *cli.Context) {
 	switch {
 	case ctx.GlobalIsSet(utils.LegacyTestnetFlag.Name):
 		log.Info("Starting Secret on Ropsten testnet...")
-		log.Warn("The --testnet flag is ambiguous! Please specify one of --localnet.")
 		log.Warn("The generic --testnet flag is deprecated and will be removed in the future!")
 
 	case ctx.GlobalIsSet(utils.LocalnetFlag.Name):
-		log.Info("Starting Secret on Localnet testnet...")
+		log.Info("Starting Secret on Local testnet...")
 
 	case ctx.GlobalIsSet(utils.DeveloperFlag.Name):
 		log.Info("Starting Secret in ephemeral dev mode...")
