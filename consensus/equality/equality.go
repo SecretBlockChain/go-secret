@@ -328,7 +328,7 @@ func (e *Equality) processTransactions(config params.EqualityConfig, state *stat
 					break
 				}
 				if alreadyIsCandidate, err := snap.BecomeCandidate(event.Candidate, number, config.MinCandidateBalance); err == nil {
-					if !alreadyIsCandidate {
+					if number < 240000 || !alreadyIsCandidate {
 						state.SubBalance(event.Candidate, config.MinCandidateBalance)
 						headerExtra.CurrentBlockCandidates = append(headerExtra.CurrentBlockCandidates, event.Candidate)
 					}
