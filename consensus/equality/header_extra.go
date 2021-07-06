@@ -165,6 +165,16 @@ func DecodeHeaderExtra(header *types.Header) (HeaderExtra, error) {
 	return NewHeaderExtra(headerExtra[extraVanity : len(headerExtra)-extraSeal])
 }
 
+// Returns whether an address exists in the address list.
+func addressesExist(slice []common.Address, addr common.Address) bool {
+	for _, address := range slice {
+		if address == addr {
+			return true
+		}
+	}
+	return false
+}
+
 // Ensure each element of an common.Address slice are not the same.
 func addressesDistinct(slice []common.Address) []common.Address {
 	if len(slice) <= 1 {
@@ -176,6 +186,17 @@ func addressesDistinct(slice []common.Address) []common.Address {
 	for _, address := range slice {
 		if _, ok := set[address]; !ok {
 			set[address] = struct{}{}
+			result = append(result, address)
+		}
+	}
+	return result
+}
+
+// Remove an element from the address list.
+func addressesRemove(slice []common.Address, addr common.Address) []common.Address {
+	result := make([]common.Address, 0, len(slice))
+	for _, address := range slice {
+		if address != addr {
 			result = append(result, address)
 		}
 	}

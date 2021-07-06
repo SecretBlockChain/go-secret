@@ -339,6 +339,9 @@ func (e *Equality) processTransactions(config params.EqualityConfig, state *stat
 				if security, err := snap.CancelCandidate(event.Delegator); err == nil {
 					state.AddBalance(event.Delegator, security)
 					headerExtra.CurrentBlockCancelCandidates = append(headerExtra.CurrentBlockCancelCandidates, event.Delegator)
+					if addressesExist(headerExtra.CurrentBlockCandidates, event.Delegator) {
+						headerExtra.CurrentBlockCandidates = addressesRemove(headerExtra.CurrentBlockCandidates, event.Delegator)
+					}
 				}
 				count++
 			}
@@ -346,6 +349,7 @@ func (e *Equality) processTransactions(config params.EqualityConfig, state *stat
 	}
 
 	headerExtra.CurrentBlockCandidates = addressesDistinct(headerExtra.CurrentBlockCandidates)
+	headerExtra.CurrentBlockCancelCandidates = addressesDistinct(headerExtra.CurrentBlockCancelCandidates)
 
 	log.Trace("[equality] Processing transactions done", "txs", count)
 }
