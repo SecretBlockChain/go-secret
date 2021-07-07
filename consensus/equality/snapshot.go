@@ -429,9 +429,7 @@ func (snap *Snapshot) BecomeCandidate(
 	if blockNumber >= 250000 || (len(force) == 0 || !force[0]) {
 		candidateRLP, err := candidateTrie.TryGet(key)
 		if err != nil {
-			if _, ok := err.(*trie.MissingNodeError); !ok {
-				return false, err
-			}
+			return false, err
 		}
 		if candidateRLP != nil {
 			return true, nil
