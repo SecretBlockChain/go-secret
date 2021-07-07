@@ -251,7 +251,7 @@ func (e *Equality) tryElect(config params.EqualityConfig, header *types.Header,
 				break
 			}
 
-			if _, err := snap.CancelCandidate(validator.Address); err != nil {
+			if _, _, err := snap.CancelCandidate(validator.Address); err != nil {
 				return err
 			}
 
@@ -331,14 +331,20 @@ func (e *Equality) processTransactions(config params.EqualityConfig, state *stat
 					if number < 250000 || !alreadyIsCandidate {
 						state.SubBalance(event.Candidate, config.MinCandidateBalance)
 						headerExtra.CurrentBlockCandidates = append(headerExtra.CurrentBlockCandidates, event.Candidate)
+						if addressesExist(headerExtra.CurrentBlockCancelCandidates, event.Candidate) {
+							headerExtra.CurrentBlockCancelCandidates = addressesRemove(headerExtra.CurrentBlockCancelCandidates, event.Candidate)
+						}
 					}
 				}
 				count++
 			case *EventCancelCandidate:
 				event := ctx.(*EventCancelCandidate)
-				if security, err := snap.CancelCandidate(event.Delegator); err == nil {
+				if exist, security, err := snap.CancelCandidate(event.Delegator); err == nil && exist {
 					state.AddBalance(event.Delegator, security)
 					headerExtra.CurrentBlockCancelCandidates = append(headerExtra.CurrentBlockCancelCandidates, event.Delegator)
+					if addressesExist(headerExtra.CurrentBlockCandidates, event.Delegator) {
+						headerExtra.CurrentBlockCandidates = addressesRemove(headerExtra.CurrentBlockCandidates, event.Delegator)
+					}
 				}
 				count++
 			}
@@ -346,6 +352,7 @@ func (e *Equality) processTransactions(config params.EqualityConfig, state *stat
 	}
 
 	headerExtra.CurrentBlockCandidates = addressesDistinct(headerExtra.CurrentBlockCandidates)
+	headerExtra.CurrentBlockCancelCandidates = addressesDistinct(headerExtra.CurrentBlockCancelCandidates)
 
 	log.Trace("[equality] Processing transactions done", "txs", count)
 }
