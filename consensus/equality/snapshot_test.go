@@ -113,7 +113,7 @@ func TestKickOutCandidate(t *testing.T) {
 	assert.True(t, len(candidates) == 1)
 	assert.Equal(t, candidates[0], candidate)
 
-	_, err = snap.CancelCandidate(candidate)
+	_, _, err = snap.CancelCandidate(candidate)
 	assert.Nil(t, err)
 	candidates, err = snap.RandCandidates(100, 1)
 	assert.Nil(t, err)

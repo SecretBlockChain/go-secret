@@ -130,19 +130,19 @@ func (snap *Snapshot) apply(config params.EqualityConfig, header *types.Header, 
 		if number > 1 {
 			security = config.MinCandidateBalance
 		}
-		if _, err := snap.BecomeCandidate(candidate, number, security); err != nil {
+		if _, err := snap.BecomeCandidate(candidate, number, security, true); err != nil {
 			return err
 		}
 	}
 
 	for _, candidate := range headerExtra.CurrentBlockKickOutCandidates {
-		if _, err := snap.CancelCandidate(candidate); err != nil {
+		if _, _, err := snap.CancelCandidate(candidate); err != nil {
 			return err
 		}
 	}
 
 	for _, candidate := range headerExtra.CurrentBlockCancelCandidates {
-		if _, err := snap.CancelCandidate(candidate); err != nil {
+		if _, _, err := snap.CancelCandidate(candidate); err != nil {
 			return err
 		}
 	}
@@ -417,19 +417,23 @@ func (snap *Snapshot) RandCandidates(seed int64, n int) ([]common.Address, error
 }
 
 // BecomeCandidate add a new candidate,return a bool value means address already is or not a candidate
-func (snap *Snapshot) BecomeCandidate(candidateAddr common.Address, blockNumber uint64, security *big.Int) (bool, error) {
+func (snap *Snapshot) BecomeCandidate(
+	candidateAddr common.Address, blockNumber uint64, security *big.Int, force ...bool) (exist bool, err error) {
+
 	candidateTrie, err := snap.ensureTrie(candidatePrefix)
 	if err != nil {
 		return false, err
 	}
 
 	key := candidateAddr.Bytes()
-	candidateRLP, err := candidateTrie.TryGet(key)
-	if err != nil {
-		return false, err
-	}
-	if candidateRLP != nil {
-		return true, nil
+	if len(force) == 0 || !force[0] {
+		candidateRLP, err := candidateTrie.TryGet(key)
+		if err != nil {
+			return false, err
+		}
+		if candidateRLP != nil {
+			return true, nil
+		}
 	}
 
 	candidate := Candidate{
@@ -445,25 +449,29 @@ func (snap *Snapshot) BecomeCandidate(candidateAddr common.Address, blockNumber 
 }
 
 // CancelCandidate remove a candidate
-func (snap *Snapshot) CancelCandidate(candidateAddr common.Address) (*big.Int, error) {
+func (snap *Snapshot) CancelCandidate(candidateAddr common.Address) (exist bool, security *big.Int, err error) {
 	candidateTrie, err := snap.ensureTrie(candidatePrefix)
 	if err != nil {
-		return big.NewInt(0), err
+		return false, big.NewInt(0), err
 	}
 
 	key := candidateAddr.Bytes()
 
 	var candidate Candidate
 	candidateRLP := candidateTrie.Get(key)
+	if candidateRLP == nil {
+		return false, big.NewInt(0), nil
+	}
+
 	if err := rlp.DecodeBytes(candidateRLP, &candidate); err != nil {
-		return nil, fmt.Errorf("failed to decode candidate: %s", err)
+		return false, nil, fmt.Errorf("failed to decode candidate: %s", err)
 	}
 
 	err = candidateTrie.TryDelete(key)
 	if err != nil {
 		if _, ok := err.(*trie.MissingNodeError); !ok {
-			return big.NewInt(0), err
+			return false, big.NewInt(0), err
 		}
 	}
-	return candidate.Security, nil
+	return true, candidate.Security, nil
 }
