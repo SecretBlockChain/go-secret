@@ -31,61 +31,60 @@ import (
 
 // Genesis hashes to enforce below configs on.
 var (
-	MainnetGenesisHash = common.HexToHash("0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3")
+	MainnetGenesisHash = common.HexToHash("0xbd00c549f467bc8b2ff17b421822618b5ff4108df796aeb6cb449cbb44c644ec")
 	TestnetGenesisHash = common.HexToHash("0xf024c8cb7b92ea396317b9a64afec723c48fc8df1843ce02c171daf95a5b7dc0")
 )
 
 // TrustedCheckpoints associates each known checkpoint with the genesis hash of
 // the chain it belongs to.
 var TrustedCheckpoints = map[common.Hash]*TrustedCheckpoint{
-	MainnetGenesisHash: MainnetTrustedCheckpoint,
+	//MainnetGenesisHash: MainnetTrustedCheckpoint,
 }
 
 // CheckpointOracles associates each known checkpoint oracles with the genesis hash of
 // the chain it belongs to.
 var CheckpointOracles = map[common.Hash]*CheckpointOracleConfig{
-	MainnetGenesisHash: MainnetCheckpointOracle,
+	//MainnetGenesisHash: MainnetCheckpointOracle,
 }
 
 var (
 	// MainnetChainConfig is the chain parameters to run a node on the main network.
 	MainnetChainConfig = &ChainConfig{
-		ChainID:             big.NewInt(1),
-		HomesteadBlock:      big.NewInt(1150000),
-		DAOForkBlock:        big.NewInt(1920000),
-		DAOForkSupport:      true,
-		EIP150Block:         big.NewInt(2463000),
-		EIP150Hash:          common.HexToHash("0x2086799aeebeae135c246c65021c82b4e15a2c451340993aacfd2751886514f0"),
-		EIP155Block:         big.NewInt(2675000),
-		EIP158Block:         big.NewInt(2675000),
-		ByzantiumBlock:      big.NewInt(4370000),
-		ConstantinopleBlock: big.NewInt(7280000),
-		PetersburgBlock:     big.NewInt(7280000),
-		IstanbulBlock:       big.NewInt(9069000),
-		MuirGlacierBlock:    big.NewInt(9200000),
-		Ethash:              new(EthashConfig),
+		ChainID:             big.NewInt(211),
+		HomesteadBlock:      big.NewInt(0),
+		DAOForkSupport:      false,
+		EIP150Block:         big.NewInt(0),
+		EIP150Hash:          common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000000"),
+		EIP155Block:         big.NewInt(0),
+		EIP158Block:         big.NewInt(0),
+		ByzantiumBlock:      big.NewInt(0),
+		ConstantinopleBlock: big.NewInt(0),
+		PetersburgBlock:     big.NewInt(0),
+		IstanbulBlock:       big.NewInt(0),
+		MuirGlacierBlock:    big.NewInt(0),
+		Equality:            MainNetEqualityConfig(),
 	}
 
 	// MainnetTrustedCheckpoint contains the light client trusted checkpoint for the main network.
-	MainnetTrustedCheckpoint = &TrustedCheckpoint{
-		SectionIndex: 336,
-		SectionHead:  common.HexToHash("0xd42b78902b6527a80337bf1bc372a3ccc3db97e9cc7cf421ca047ae9076c716b"),
-		CHTRoot:      common.HexToHash("0xd97f3b30f7e0cb958e4c67c53ec27745e5a165e33e56821b86523dfee62b783a"),
-		BloomRoot:    common.HexToHash("0xf3cbfd070fababfe2adc9b23fc02c731f6ca2cce6646b3ede4ef2db06092ccce"),
-	}
+	//MainnetTrustedCheckpoint = &TrustedCheckpoint{
+	//	SectionIndex: 336,
+	//	SectionHead:  common.HexToHash("0xd42b78902b6527a80337bf1bc372a3ccc3db97e9cc7cf421ca047ae9076c716b"),
+	//	CHTRoot:      common.HexToHash("0xd97f3b30f7e0cb958e4c67c53ec27745e5a165e33e56821b86523dfee62b783a"),
+	//	BloomRoot:    common.HexToHash("0xf3cbfd070fababfe2adc9b23fc02c731f6ca2cce6646b3ede4ef2db06092ccce"),
+	//}
 
 	// MainnetCheckpointOracle contains a set of configs for the main network oracle.
-	MainnetCheckpointOracle = &CheckpointOracleConfig{
-		Address: common.HexToAddress("0x9a9070028361F7AAbeB3f2F2Dc07F82C4a98A02a"),
-		Signers: []common.Address{
-			common.HexToAddress("0x1b2C260efc720BE89101890E4Db589b44E950527"), // Peter
-			common.HexToAddress("0x78d1aD571A1A09D60D9BBf25894b44e4C8859595"), // Martin
-			common.HexToAddress("0x286834935f4A8Cfb4FF4C77D5770C2775aE2b0E7"), // Zsolt
-			common.HexToAddress("0xb86e2B0Ab5A4B1373e40c51A7C712c70Ba2f9f8E"), // Gary
-			common.HexToAddress("0x0DF8fa387C602AE62559cC4aFa4972A7045d6707"), // Guillaume
-		},
-		Threshold: 2,
-	}
+	//MainnetCheckpointOracle = &CheckpointOracleConfig{
+	//	Address: common.HexToAddress("0x9a9070028361F7AAbeB3f2F2Dc07F82C4a98A02a"),
+	//	Signers: []common.Address{
+	//		common.HexToAddress("0x1b2C260efc720BE89101890E4Db589b44E950527"), // Peter
+	//		common.HexToAddress("0x78d1aD571A1A09D60D9BBf25894b44e4C8859595"), // Martin
+	//		common.HexToAddress("0x286834935f4A8Cfb4FF4C77D5770C2775aE2b0E7"), // Zsolt
+	//		common.HexToAddress("0xb86e2B0Ab5A4B1373e40c51A7C712c70Ba2f9f8E"), // Gary
+	//		common.HexToAddress("0x0DF8fa387C602AE62559cC4aFa4972A7045d6707"), // Guillaume
+	//	},
+	//	Threshold: 2,
+	//}
 
 	// TestnetChainConfig contains the chain parameters to run a node on the test network.
 	TestnetChainConfig = &ChainConfig{
@@ -252,6 +251,45 @@ type equalityConfigMarshaling struct {
 	Validators          []common.Address
 	Pool                common.Address
 	Rewards             EqualityRewards
+}
+
+// MainNetEqualityConfig returns mainnet config of equality consensus engine.
+func MainNetEqualityConfig() *EqualityConfig {
+	reward, _ := big.NewInt(0).SetString("1bc16d674ec80000", 16)
+	minCandidateBalance, _ := big.NewInt(0).SetString("3635c9adc5dea00000", 16)
+
+	return &EqualityConfig{
+		Period:              3,
+		Epoch:               28800,
+		MaxValidatorsCount:  21,
+		MinCandidateBalance: minCandidateBalance,
+		GenesisTimestamp:    1625816400,
+		Pool:                common.HexToAddress("0x23ebDD82dFDaFFaaB2E2510AaD7aafD5f2f4D5FC"),
+		Rewards: []EqualityReward{
+			{
+				Number: 45000000,
+				Reward: reward,
+			},
+			{
+				Number: 45000001,
+				Reward: big.NewInt(0),
+			},
+		},
+		Validators: []common.Address{
+			common.HexToAddress("0x98b79fF9Cd677c898264B6cf74AF43FD7d0bEa82"),
+			common.HexToAddress("0x402aA2594DF0b9616E84D7F2751813Bab1218b79"),
+			common.HexToAddress("0xD3F238B3691337Fbab7575B0F6F0AA705F1014A9"),
+			common.HexToAddress("0xEB4B9516a30Ae45EF849AdBA6e4b996Fcc0b5440"),
+			common.HexToAddress("0xD32eB0645F230dEF4878e4E3073Cd6a8F3e571A0"),
+			common.HexToAddress("0xc84A410fF68a0E71d7FE972a1EC5a62A12F2A2eA"),
+			common.HexToAddress("0xE76F164d570bA6777E2ae931cFDA6FAe9c4f6621"),
+			common.HexToAddress("0xfeF7E0757481d6346A3fad604578C42438DABcc3"),
+			common.HexToAddress("0x332146027fF990b1178d943Bd1a403636B36D1D0"),
+			common.HexToAddress("0xf99608914E79e2797D3B517D98A8F82291384AB1"),
+			common.HexToAddress("0x23ebDD82dFDaFFaaB2E2510AaD7aafD5f2f4D5FC"),
+			common.HexToAddress("0xc3c55281F345386715239642f968aFff77F1DAA2"),
+		},
+	}
 }
 
 // TestnetEqualityConfig returns testnet config of equality consensus engine.

@@ -19,10 +19,11 @@ package params
 import "github.com/SecretBlockChain/go-secret/common"
 
 // MainnetBootnodes are the enode URLs of the P2P bootstrap nodes running on
-// the main Ethereum network.
+// the main Secret network.
 var MainnetBootnodes = []string{
-	// Ethereum Foundation Go Bootnodes
-	"enode://42fc8a7b86085d5e5fadbc71ae3f17c1c669f4ca24bc9a99fea8e652a5348dc3020f5bf0ca25ed126ede2a95948a49f61b28d17cd5cc189f11f4804ea8ef998a@127.0.0.1:30303",
+	// Secret Foundation Go Bootnodes
+	"enode://342ad34ac6001a54b977a1673014ab5b6a080e08ba0cb899675694d6172ba82a1d63c3b5ee831d0674b48fbb20118f1c1f1cc33149f54a21dd0b6a48cd19a3cf@18.166.178.151:30310",
+	"enode://40c107850e014b9a39392dc9a430b5bac78817658eacdfa109187070a1c40219c948f27d794a82dd555cfad39d2f7b7dfe2924a7b7d46d8075e38b94a80c967c@18.166.177.253:30310",
 }
 
 // TestnetBootnodes are the enode URLs of the P2P bootstrap nodes running on the
