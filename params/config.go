@@ -31,7 +31,7 @@ import (
 
 // Genesis hashes to enforce below configs on.
 var (
-	MainnetGenesisHash = common.HexToHash("0xbd00c549f467bc8b2ff17b421822618b5ff4108df796aeb6cb449cbb44c644ec")
+	MainnetGenesisHash = common.HexToHash("0x4a981f33a1d368fa11781ee15da01f936736d536f6bd18b7ef02b616f858d88b")
 	TestnetGenesisHash = common.HexToHash("0xf024c8cb7b92ea396317b9a64afec723c48fc8df1843ce02c171daf95a5b7dc0")
 )
 
@@ -263,7 +263,7 @@ func MainNetEqualityConfig() *EqualityConfig {
 		Epoch:               28800,
 		MaxValidatorsCount:  21,
 		MinCandidateBalance: minCandidateBalance,
-		GenesisTimestamp:    1625816400,
+		GenesisTimestamp:    1625829000,
 		Pool:                common.HexToAddress("0x23ebDD82dFDaFFaaB2E2510AaD7aafD5f2f4D5FC"),
 		Rewards: []EqualityReward{
 			{
