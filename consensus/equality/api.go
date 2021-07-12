@@ -37,7 +37,7 @@ type API struct {
 }
 
 // load a snapshot at specified block
-func (api *API) loadSnapshot(number *rpc.BlockNumber) (*Snapshot, error) {
+func (api *API) loadSnapshot(number *rpc.BlockNumber) (*Snapshot, HeaderExtra, error) {
 	var header *types.Header
 	if number == nil || *number == rpc.LatestBlockNumber {
 		header = api.chain.CurrentHeader()
@@ -45,19 +45,21 @@ func (api *API) loadSnapshot(number *rpc.BlockNumber) (*Snapshot, error) {
 		header = api.chain.GetHeaderByNumber(uint64(number.Int64()))
 	}
 	if header == nil {
-		return nil, errUnknownBlock
+		return nil, HeaderExtra{}, errUnknownBlock
 	}
 
 	headerExtra, err := DecodeHeaderExtra(header)
 	if err != nil {
-		return nil, err
+		return nil, HeaderExtra{}, err
 	}
-	return loadSnapshot(api.equality.db, headerExtra.Root)
+
+	snap, err := loadSnapshot(api.equality.db, headerExtra.Root)
+	return snap, headerExtra, err
 }
 
 // GetAddress retrieves the candidate information of the address
 func (api *API) GetAddress(address common.Address, number *rpc.BlockNumber) (rpcCandidateInfo, error) {
-	snap, err := api.loadSnapshot(number)
+	snap, _, err := api.loadSnapshot(number)
 	if err != nil {
 		return rpcCandidateInfo{}, err
 	}
@@ -90,7 +92,7 @@ func (api *API) GetAddress(address common.Address, number *rpc.BlockNumber) (rpc
 
 // GetCandidates retrieves the list of the candidates at specified block
 func (api *API) GetCandidates(number *rpc.BlockNumber) ([]rpcCandidate, error) {
-	snap, err := api.loadSnapshot(number)
+	snap, _, err := api.loadSnapshot(number)
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +116,7 @@ func (api *API) GetCandidates(number *rpc.BlockNumber) ([]rpcCandidate, error) {
 
 // GetValidators retrieves the list of the validators at specified block
 func (api *API) GetValidators(number *rpc.BlockNumber) ([]rpcValidator, error) {
-	snap, err := api.loadSnapshot(number)
+	snap, headerExtra, err := api.loadSnapshot(number)
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +127,7 @@ func (api *API) GetValidators(number *rpc.BlockNumber) ([]rpcValidator, error) {
 	}
 
 	mapper := make(map[common.Address]*big.Int)
-	addresses, err := snap.CountMinted(1)
+	addresses, err := snap.CountMinted(headerExtra.Epoch)
 	if err != nil {
 		return nil, err
 	}
