@@ -37,15 +37,11 @@ var (
 
 // TrustedCheckpoints associates each known checkpoint with the genesis hash of
 // the chain it belongs to.
-var TrustedCheckpoints = map[common.Hash]*TrustedCheckpoint{
-	//MainnetGenesisHash: MainnetTrustedCheckpoint,
-}
+var TrustedCheckpoints = map[common.Hash]*TrustedCheckpoint{}
 
 // CheckpointOracles associates each known checkpoint oracles with the genesis hash of
 // the chain it belongs to.
-var CheckpointOracles = map[common.Hash]*CheckpointOracleConfig{
-	//MainnetGenesisHash: MainnetCheckpointOracle,
-}
+var CheckpointOracles = map[common.Hash]*CheckpointOracleConfig{}
 
 var (
 	// MainnetChainConfig is the chain parameters to run a node on the main network.
@@ -64,27 +60,6 @@ var (
 		MuirGlacierBlock:    big.NewInt(0),
 		Equality:            MainNetEqualityConfig(),
 	}
-
-	// MainnetTrustedCheckpoint contains the light client trusted checkpoint for the main network.
-	//MainnetTrustedCheckpoint = &TrustedCheckpoint{
-	//	SectionIndex: 336,
-	//	SectionHead:  common.HexToHash("0xd42b78902b6527a80337bf1bc372a3ccc3db97e9cc7cf421ca047ae9076c716b"),
-	//	CHTRoot:      common.HexToHash("0xd97f3b30f7e0cb958e4c67c53ec27745e5a165e33e56821b86523dfee62b783a"),
-	//	BloomRoot:    common.HexToHash("0xf3cbfd070fababfe2adc9b23fc02c731f6ca2cce6646b3ede4ef2db06092ccce"),
-	//}
-
-	// MainnetCheckpointOracle contains a set of configs for the main network oracle.
-	//MainnetCheckpointOracle = &CheckpointOracleConfig{
-	//	Address: common.HexToAddress("0x9a9070028361F7AAbeB3f2F2Dc07F82C4a98A02a"),
-	//	Signers: []common.Address{
-	//		common.HexToAddress("0x1b2C260efc720BE89101890E4Db589b44E950527"), // Peter
-	//		common.HexToAddress("0x78d1aD571A1A09D60D9BBf25894b44e4C8859595"), // Martin
-	//		common.HexToAddress("0x286834935f4A8Cfb4FF4C77D5770C2775aE2b0E7"), // Zsolt
-	//		common.HexToAddress("0xb86e2B0Ab5A4B1373e40c51A7C712c70Ba2f9f8E"), // Gary
-	//		common.HexToAddress("0x0DF8fa387C602AE62559cC4aFa4972A7045d6707"), // Guillaume
-	//	},
-	//	Threshold: 2,
-	//}
 
 	// TestnetChainConfig contains the chain parameters to run a node on the test network.
 	TestnetChainConfig = &ChainConfig{
