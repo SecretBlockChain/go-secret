@@ -27,7 +27,7 @@ var (
 
 // Candidate basic information
 type Candidate struct {
-	Security    *big.Int
+	Staked      *big.Int
 	BlockNumber uint64
 }
 
@@ -358,6 +358,26 @@ func (snap *Snapshot) GetCandidates() ([]common.Address, error) {
 	return candidates, nil
 }
 
+// GetCandidate returns specified candidate information.
+func (snap *Snapshot) GetCandidate(candidateAddr common.Address) (*Candidate, error) {
+	candidateTrie, err := snap.ensureTrie(candidatePrefix)
+	if err != nil {
+		return nil, err
+	}
+
+	var candidate Candidate
+	key := candidateAddr.Bytes()
+	value := candidateTrie.Get(key)
+	if value == nil {
+		return nil, nil
+	}
+
+	if err = rlp.DecodeBytes(value, &candidate); err != nil {
+		return nil, err
+	}
+	return &candidate, nil
+}
+
 // EnoughCandidates count of candidates is greater than or equal to n.
 func (snap *Snapshot) EnoughCandidates(n int) (int, bool) {
 	candidateCount := 0
@@ -416,7 +436,7 @@ func (snap *Snapshot) RandCandidates(seed int64, n int) ([]common.Address, error
 	return candidates, nil
 }
 
-// BecomeCandidate add a new candidate,return a bool value means address already is or not a candidate
+// BecomeCandidate add a new candidate, return a bool value means address already is or not a candidate
 func (snap *Snapshot) BecomeCandidate(
 	candidateAddr common.Address, blockNumber uint64, security *big.Int, force ...bool) (exist bool, err error) {
 
@@ -437,7 +457,7 @@ func (snap *Snapshot) BecomeCandidate(
 	}
 
 	candidate := Candidate{
-		Security:    security,
+		Staked:      security,
 		BlockNumber: blockNumber,
 	}
 
@@ -473,5 +493,5 @@ func (snap *Snapshot) CancelCandidate(candidateAddr common.Address) (exist bool,
 			return false, big.NewInt(0), err
 		}
 	}
-	return true, candidate.Security, nil
+	return true, candidate.Staked, nil
 }
