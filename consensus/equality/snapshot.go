@@ -27,8 +27,8 @@ var (
 
 // Candidate basic information
 type Candidate struct {
-	Staked      *big.Int
-	BlockNumber uint64
+	Staked      *big.Int `json:"staked"`
+	BlockNumber uint64   `json:"blockNumber"`
 }
 
 // SortableAddress sorted by votes.
@@ -344,16 +344,20 @@ func (snap *Snapshot) MintBlock(epoch, number uint64, validator common.Address) 
 }
 
 // GetCandidates returns all candidates.
-func (snap *Snapshot) GetCandidates() ([]common.Address, error) {
+func (snap *Snapshot) GetCandidates() (map[common.Address]Candidate, error) {
 	candidateTrie, err := snap.ensureTrie(candidatePrefix)
 	if err != nil {
 		return nil, err
 	}
 
-	candidates := make([]common.Address, 0)
+	candidates := make(map[common.Address]Candidate, 0)
 	iterCandidate := trie.NewIterator(candidateTrie.NodeIterator(nil))
 	for iterCandidate.Next() {
-		candidates = append(candidates, common.BytesToAddress(iterCandidate.Key))
+		var candidate Candidate
+		if err = rlp.DecodeBytes(iterCandidate.Value, &candidate); err != nil {
+			return nil, err
+		}
+		candidates[common.BytesToAddress(iterCandidate.Key)] = candidate
 	}
 	return candidates, nil
 }

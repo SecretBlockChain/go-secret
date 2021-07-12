@@ -9,7 +9,13 @@ import (
 	"github.com/SecretBlockChain/go-secret/rpc"
 )
 
-type candidateAddressInfo struct {
+type rpcCandidate struct {
+	Address     common.Address        `json:"address"`
+	Staked      *math.HexOrDecimal256 `json:"staked"`
+	BlockNumber *math.HexOrDecimal256 `json:"blockNumber"`
+}
+
+type rpcCandidateInfo struct {
 	Address     common.Address        `json:"address"`
 	IsCandidate bool                  `json:"isCandidate"`
 	IsValidator bool                  `json:"isValidator"`
@@ -44,16 +50,16 @@ func (api *API) loadSnapshot(number *rpc.BlockNumber) (*Snapshot, error) {
 }
 
 // GetAddress retrieves the candidate information of the address
-func (api *API) GetAddress(address common.Address, number *rpc.BlockNumber) (candidateAddressInfo, error) {
+func (api *API) GetAddress(address common.Address, number *rpc.BlockNumber) (rpcCandidateInfo, error) {
 	snap, err := api.loadSnapshot(number)
 	if err != nil {
-		return candidateAddressInfo{}, err
+		return rpcCandidateInfo{}, err
 	}
 
-	result := candidateAddressInfo{Address: address}
+	result := rpcCandidateInfo{Address: address}
 	candidate, err := snap.GetCandidate(address)
 	if err != nil {
-		return candidateAddressInfo{}, err
+		return rpcCandidateInfo{}, err
 	}
 	if candidate != nil {
 		result.IsCandidate = true
@@ -65,7 +71,7 @@ func (api *API) GetAddress(address common.Address, number *rpc.BlockNumber) (can
 
 	validators, err := snap.GetValidators()
 	if err != nil {
-		return candidateAddressInfo{}, err
+		return rpcCandidateInfo{}, err
 	}
 	for _, validator := range validators {
 		if validator == address {
@@ -77,12 +83,27 @@ func (api *API) GetAddress(address common.Address, number *rpc.BlockNumber) (can
 }
 
 // GetCandidates retrieves the list of the candidates at specified block
-func (api *API) GetCandidates(number *rpc.BlockNumber) ([]common.Address, error) {
+func (api *API) GetCandidates(number *rpc.BlockNumber) ([]rpcCandidate, error) {
 	snap, err := api.loadSnapshot(number)
 	if err != nil {
 		return nil, err
 	}
-	return snap.GetCandidates()
+
+	candidates, err := snap.GetCandidates()
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]rpcCandidate, 0, len(candidates))
+	for addr, candidate := range candidates {
+		c := rpcCandidate{Address: addr}
+		staked := math.HexOrDecimal256(*candidate.Staked)
+		c.Staked = &staked
+		blockNumber := math.NewHexOrDecimal256(int64(candidate.BlockNumber))
+		c.BlockNumber = blockNumber
+		result = append(result, c)
+	}
+	return result, nil
 }
 
 // GetValidators retrieves the list of the validators at specified block
