@@ -1,9 +1,10 @@
 package equality
 
 import (
-	"github.com/SecretBlockChain/go-secret/common/math"
+	"math/big"
 
 	"github.com/SecretBlockChain/go-secret/common"
+	"github.com/SecretBlockChain/go-secret/common/math"
 	"github.com/SecretBlockChain/go-secret/consensus"
 	"github.com/SecretBlockChain/go-secret/core/types"
 	"github.com/SecretBlockChain/go-secret/rpc"
@@ -13,6 +14,11 @@ type rpcCandidate struct {
 	Address     common.Address        `json:"address"`
 	Staked      *math.HexOrDecimal256 `json:"staked"`
 	BlockNumber *math.HexOrDecimal256 `json:"blockNumber"`
+}
+
+type rpcValidator struct {
+	Address     common.Address `json:"address"`
+	CountMinted *big.Int       `json:"countMinted"`
 }
 
 type rpcCandidateInfo struct {
@@ -107,10 +113,31 @@ func (api *API) GetCandidates(number *rpc.BlockNumber) ([]rpcCandidate, error) {
 }
 
 // GetValidators retrieves the list of the validators at specified block
-func (api *API) GetValidators(number *rpc.BlockNumber) ([]common.Address, error) {
+func (api *API) GetValidators(number *rpc.BlockNumber) ([]rpcValidator, error) {
 	snap, err := api.loadSnapshot(number)
 	if err != nil {
 		return nil, err
 	}
-	return snap.GetValidators()
+
+	validators, err := snap.GetValidators()
+	if err != nil {
+		return nil, err
+	}
+
+	mapper := make(map[common.Address]*big.Int)
+	addresses, err := snap.CountMinted(1)
+	if err != nil {
+		return nil, err
+	}
+	for _, address := range addresses {
+		mapper[address.Address] = address.Weight
+	}
+
+	result := make([]rpcValidator, 0, len(validators))
+	for _, validator := range validators {
+		count, _ := mapper[validator]
+		v := rpcValidator{Address: validator, CountMinted: count}
+		result = append(result, v)
+	}
+	return result, nil
 }
