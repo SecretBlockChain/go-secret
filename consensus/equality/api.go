@@ -2,6 +2,7 @@ package equality
 
 import (
 	"math/big"
+	"sort"
 
 	"github.com/SecretBlockChain/go-secret/common"
 	"github.com/SecretBlockChain/go-secret/common/math"
@@ -15,6 +16,18 @@ type rpcCandidate struct {
 	Staked      *math.HexOrDecimal256 `json:"staked"`
 	BlockNumber *math.HexOrDecimal256 `json:"blockNumber"`
 }
+
+func unwrapBigInt(val *math.HexOrDecimal256) *big.Int {
+	return (*big.Int)(val)
+}
+
+type rpcCandidateSlice []rpcCandidate
+
+func (p rpcCandidateSlice) Len() int { return len(p) }
+func (p rpcCandidateSlice) Less(i, j int) bool {
+	return unwrapBigInt(p[i].BlockNumber).Cmp(unwrapBigInt(p[j].BlockNumber)) == -1
+}
+func (p rpcCandidateSlice) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
 
 type rpcValidator struct {
 	Address     common.Address `json:"address"`
@@ -91,7 +104,7 @@ func (api *API) GetAddress(address common.Address, number *rpc.BlockNumber) (rpc
 }
 
 // GetCandidates retrieves the list of the candidates at specified block
-func (api *API) GetCandidates(number *rpc.BlockNumber) ([]rpcCandidate, error) {
+func (api *API) GetCandidates(number *rpc.BlockNumber) (rpcCandidateSlice, error) {
 	snap, _, err := api.loadSnapshot(number)
 	if err != nil {
 		return nil, err
@@ -102,7 +115,7 @@ func (api *API) GetCandidates(number *rpc.BlockNumber) ([]rpcCandidate, error) {
 		return nil, err
 	}
 
-	result := make([]rpcCandidate, 0, len(candidates))
+	result := make(rpcCandidateSlice, 0, len(candidates))
 	for addr, candidate := range candidates {
 		c := rpcCandidate{Address: addr}
 		staked := math.HexOrDecimal256(*candidate.Staked)
@@ -111,6 +124,7 @@ func (api *API) GetCandidates(number *rpc.BlockNumber) ([]rpcCandidate, error) {
 		c.BlockNumber = blockNumber
 		result = append(result, c)
 	}
+	sort.Sort(result)
 	return result, nil
 }
 
