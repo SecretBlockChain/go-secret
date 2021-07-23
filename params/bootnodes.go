@@ -29,9 +29,7 @@ var MainnetBootnodes = []string{
 // TestnetBootnodes are the enode URLs of the P2P bootstrap nodes running on the
 // the testnet network.
 var TestnetBootnodes = []string{
-	"enode://42fc8a7b86085d5e5fadbc71ae3f17c1c669f4ca24bc9a99fea8e652a5348dc3020f5bf0ca25ed126ede2a95948a49f61b28d17cd5cc189f11f4804ea8ef998a@207.46.145.61:30310",
-	"enode://a72814e633b5316c696410ad9da28dad2af4aa9fcb26d7dbc57eaccb1810d81840b5dbedaac26933f93ae51440c00f20fde7534d790aeedb2ea8a0eb9d2d3461@207.46.145.61:30311",
-	"enode://3dcc040e7b6957f6b25041d8a797403dfb713d17cbcf85f118a8f86e2288df938696d7d078b3f7b79b90b9082c17e2da02e371587328d6847978eb248a6998df@207.46.145.61:30312",
+	"enode://7ad67ce3b1d49c687bcb11aea995f4e7bb10a92a297890a4547f7b7f8ebe344d4a5c1bd63801178f77234b5c1f18f5223c8de20b22064470521f851ef3f37e19@207.46.145.61:30311",
 }
 
 // KnownDNSNetwork returns the address of a public DNS-based node list for the given
