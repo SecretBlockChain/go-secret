@@ -42,6 +42,10 @@ type rpcCandidateInfo struct {
 	BlockNumber *math.HexOrDecimal256 `json:"blockNumber"`
 }
 
+type rpcCandidatesCount struct {
+	CandidatesCount int `json:"candidatesCount"`
+}
+
 // API is a user facing RPC API to allow controlling the signer and voting
 // mechanisms of the proof-of-equality scheme.
 type API struct {
@@ -126,6 +130,21 @@ func (api *API) GetCandidates(number *rpc.BlockNumber) (rpcCandidateSlice, error
 	}
 	sort.Sort(result)
 	return result, nil
+}
+
+// GetCandidatesCount retrieves number of the candidates at specified block
+func (api *API) GetCandidatesCount(number *rpc.BlockNumber) (rpcCandidatesCount, error) {
+	snap, _, err := api.loadSnapshot(number)
+	if err != nil {
+		return rpcCandidatesCount{}, err
+	}
+
+	candidates, err := snap.GetCandidates()
+	if err != nil {
+		return rpcCandidatesCount{}, err
+	}
+
+	return rpcCandidatesCount{CandidatesCount:len(candidates)}, nil
 }
 
 // GetValidators retrieves the list of the validators at specified block
