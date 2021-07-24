@@ -6,7 +6,6 @@ import (
 	"math/big"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/SecretBlockChain/go-secret/accounts"
 	"github.com/SecretBlockChain/go-secret/common"
@@ -123,16 +122,10 @@ func (e *Equality) InTurn(lastBlockHeader *types.Header, now uint64) bool {
 		return false
 	}
 
-	// Estimate the next block time
-	nexBlockTime := lastBlockHeader.Time + config.Period
-	if int64(nexBlockTime) < time.Now().Unix() {
-		nexBlockTime = uint64(time.Now().Unix())
-	}
-
 	e.lock.Lock()
 	signer := e.signer
 	e.lock.Unlock()
-	return e.inTurn(config, lastBlockHeader, nexBlockTime, signer)
+	return e.inTurn(config, lastBlockHeader, now, signer)
 }
 
 func (e *Equality) inTurn(config params.EqualityConfig,
@@ -340,13 +333,13 @@ func (e *Equality) processTransactions(config params.EqualityConfig, state *stat
 			case *EventCancelCandidate:
 				event := ctx.(*EventCancelCandidate)
 
-				validators, err := snap.GetValidators()
-				if err != nil {
-					break
-				}
-				if addressesExist(validators, event.Delegator) {
-					break
-				}
+				//validators, err := snap.GetValidators()
+				//if err != nil {
+				//	break
+				//}
+				//if addressesExist(validators, event.Delegator) {
+				//	break
+				//}
 
 				if exist, security, err := snap.CancelCandidate(event.Delegator); err == nil && exist {
 					state.AddBalance(event.Delegator, security)

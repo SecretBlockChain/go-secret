@@ -918,7 +918,7 @@ func (w *worker) commitNewWork(interrupt *int32, noempty bool, timestamp int64) 
 	}
 
 	engine, ok := w.engine.(*equality.Equality)
-	if ok && !engine.InTurn(parent.Header(), uint64(tstart.Unix())) {
+	if ok && !engine.InTurn(parent.Header(), header.Time) {
 		w.updateSnapshot()
 		return
 	}
